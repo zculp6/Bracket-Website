@@ -10,12 +10,20 @@ from flask_bcrypt import Bcrypt
 app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-in-production")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql://user:password@localhost/bracketdb")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Railway sets DATABASE_URL with "postgres://" prefix; SQLAlchemy needs "postgresql://"
-if app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgres://"):
-    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["SQLALCHEMY_DATABASE_URI"].replace("postgres://", "postgresql://", 1)
+# Build the database URL with the correct driver
+database_url = os.environ.get("DATABASE_URL", "postgresql://user:password@localhost/bracketdb")
+
+# Fix Render's postgres:// prefix
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+# Tell SQLAlchemy to use psycopg3 driver
+if "postgresql://" in database_url and "+psycopg" not in database_url:
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
 # ---------------------------------------
 # EXTENSIONS
