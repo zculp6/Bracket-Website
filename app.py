@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_required, current_user
 from flask_bcrypt import Bcrypt
+from simulation import simulate_tournament, chalk_bracket
 
 # ---------------------------------------
 # APP INIT
@@ -87,7 +88,22 @@ def leaderboard_page():
 @login_required
 def autofill_bracket():
     strategy = request.json.get("strategy")
-    bracket = simulate_tournament(strategy)
+    weight   = float(request.json.get("weight", 0.25))  # optional, defaults to 0.25
+
+    if strategy == "chalk":
+        bracket = chalk_bracket()
+
+    elif strategy == "simulation":
+        # weight: 0 = pure historical seed odds, 1 = pure team strength
+        bracket = simulate_tournament(weight=weight)
+
+    elif strategy == "random":
+        # Fully random — reuse simulate_tournament with weight=1 and noisy strengths
+        bracket = simulate_tournament(weight=1.0)
+
+    else:
+        return jsonify({"error": f"Unknown strategy: {strategy}"}), 400
+
     return jsonify(bracket)
 
 @app.route("/submit_bracket", methods=["POST"])
