@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>March Madness Bracket Challenge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #020b1f;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated court lines background */
+        .bg-lines {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 79px,
+                    rgba(255,255,255,0.025) 79px,
+                    rgba(255,255,255,0.025) 80px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 79px,
+                    rgba(255,255,255,0.025) 79px,
+                    rgba(255,255,255,0.025) 80px
+                );
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,80,255,0.18) 0%, transparent 70%);
+            top: -200px;
+            left: -200px;
+            pointer-events: none;
+            z-index: 0;
+            animation: driftGlow 10s ease-in-out infinite alternate;
+        }
+
+        .bg-glow-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,100,0,0.12) 0%, transparent 70%);
+            bottom: -100px;
+            right: -100px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes driftGlow {
+            from { transform: translate(0, 0); }
+            to { transform: translate(80px, 60px); }
+        }
+
+        /* NAV */
+        nav {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 60px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .nav-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px;
+            letter-spacing: 3px;
+            color: #4d8aff;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            margin-left: 32px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #fff; }
+        .nav-links a.btn-nav {
+            background: #0033a0;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .nav-links a.btn-nav:hover { background: #004ae8; }
+
+        /* HERO */
+        .hero {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            padding: 110px 20px 80px;
+        }
+
+        .hero-eyebrow {
+            font-size: 12px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: #4d8aff;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeUp 0.7s 0.2s forwards;
+        }
+
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(72px, 12vw, 140px);
+            line-height: 0.9;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeUp 0.7s 0.4s forwards;
+        }
+
+        .hero h1 span {
+            display: block;
+            background: linear-gradient(135deg, #4d8aff 0%, #ffffff 50%, #ff6b35 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: 18px;
+            color: rgba(255,255,255,0.55);
+            max-width: 520px;
+            margin: 0 auto 50px;
+            line-height: 1.6;
+            opacity: 0;
+            animation: fadeUp 0.7s 0.6s forwards;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeUp 0.7s 0.8s forwards;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background: #0033a0;
+            color: #fff;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .btn-primary:hover { background: #004ae8; transform: translateY(-2px); }
+
+        .btn-secondary {
+            display: inline-block;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: border-color 0.2s, color 0.2s, transform 0.15s;
+        }
+        .btn-secondary:hover { border-color: #4d8aff; color: #fff; transform: translateY(-2px); }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* STATS STRIP */
+        .stats-strip {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin: 0 auto 100px;
+            max-width: 800px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.03);
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 32px 20px;
+            border-right: 1px solid rgba(255,255,255,0.08);
+        }
+        .stat-item:last-child { border-right: none; }
+
+        .stat-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 48px;
+            color: #4d8aff;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* FEATURES */
+        .features {
+            position: relative;
+            z-index: 5;
+            max-width: 1100px;
+            margin: 0 auto 100px;
+            padding: 0 40px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 36px 30px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(77,138,255,0.4);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(0,51,160,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+        }
+
+        /* CTA SECTION */
+        .cta-section {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            padding: 80px 20px 120px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .cta-section h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 60px;
+            letter-spacing: 3px;
+            margin-bottom: 16px;
+        }
+
+        .cta-section p {
+            color: rgba(255,255,255,0.5);
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 20px 24px; }
+            .features { grid-template-columns: 1fr; }
+            .stats-strip { flex-direction: column; }
+            .stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-lines"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
+
+<nav>
+    <div class="nav-logo">MM Bracket</div>
+    <div class="nav-links">
+        <a href="/leaderboard">Leaderboard</a>
+        <a href="/login">Login</a>
+        <a href="/register" class="btn-nav">Get Started</a>
+    </div>
+</nav>
+
+<section class="hero">
+    <p class="hero-eyebrow">NCAA Tournament 2025</p>
+    <h1><span>March<br>Madness</span></h1>
+    <p class="hero-sub">Build your bracket. Pick your upsets. Prove you know basketball better than everyone else.</p>
+    <div class="hero-cta">
+        <a href="/register" class="btn-primary">Create Your Bracket</a>
+        <a href="/leaderboard" class="btn-secondary">View Leaderboard</a>
+    </div>
+</section>
+
+<div class="stats-strip">
+    <div class="stat-item">
+        <div class="stat-number">64</div>
+        <div class="stat-label">Teams</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">63</div>
+        <div class="stat-label">Games</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">2</div>
+        <div class="stat-label">Entries per User</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">∞</div>
+        <div class="stat-label">Bragging Rights</div>
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Auto-fill Strategies</h3>
+        <p>Let chalk do the work or go full chaos mode with random picks. Smart autofill options to get you started fast.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <h3>Live Leaderboard</h3>
+        <p>Track your score in real-time as games are played. See where you stand against the whole field.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Two Entries</h3>
+        <p>Submit up to two different brackets per user. Hedge your bets or double down on your convictions.</p>
+    </div>
+</div>
+
+<section class="cta-section">
+    <h2>Ready to Play?</h2>
+    <p>Registration is free. Create an account and lock in your picks before tip-off.</p>
+    <a href="/register" class="btn-primary">Build My Bracket →</a>
+</section>
+
+</body>
+</html>
