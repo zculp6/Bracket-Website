@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_required, current_user
 from flask_bcrypt import Bcrypt
 from simulation import simulate_tournament, chalk_bracket
+from simulation import SEED_REGION_MAPPING, REGION_TO_ROUND_ID
 
 # ---------------------------------------
 # APP INIT
@@ -105,6 +106,31 @@ def autofill_bracket():
         return jsonify({"error": f"Unknown strategy: {strategy}"}), 400
 
     return jsonify(bracket)
+
+
+# ---------------------------------------
+# Building the Bracket Structure
+# ---------------------------------------
+@app.route("/bracket")
+@login_required
+def bracket_page():
+    # Build the initial teams structure for the bracket
+    teams_by_region = {"west": [], "south": [], "east": [], "midwest": []}
+    standard_order = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
+
+    # Group teams by region
+    region_teams = {"West": [], "South": [], "East": [], "Midwest": []}
+    for team, (seed, region) in SEED_REGION_MAPPING.items():
+        region_teams[region].append({"seed": seed, "name": team})
+
+    # Sort each region by standard bracket order
+    for region, teams in region_teams.items():
+        key = region.lower()
+        teams_by_region[key] = sorted(
+            teams, key=lambda t: standard_order.index(t["seed"]) if t["seed"] in standard_order else 99
+        )
+
+    return render_template("bracket.html", teams=teams_by_region)
 
 @app.route("/submit_bracket", methods=["POST"])
 @login_required

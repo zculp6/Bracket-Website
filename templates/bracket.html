@@ -209,5 +209,13 @@
     });
 </script>
 
+<script>
+    // Load initial teams from Flask into the bracket
+    const initialTeams = {{ teams | tojson }};
+    document.addEventListener("DOMContentLoaded", function() {
+        loadInitialTeams(initialTeams);
+    });
+</script>
+
 </body>
 </html>
