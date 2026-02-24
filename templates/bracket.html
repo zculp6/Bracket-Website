@@ -209,11 +209,60 @@
     });
 </script>
 
+<script src="{{ url_for('static', filename='js/bracket.js') }}"></script>
+<script src="{{ url_for('static', filename='js/autofill.js') }}"></script>
+
 <script>
-    // Load initial teams from Flask into the bracket
+    // Load teams on page load
     const initialTeams = {{ teams | tojson }};
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         loadInitialTeams(initialTeams);
+    });
+
+    // Autofill button
+    document.getElementById('autofillButton').addEventListener('click', function () {
+        const strat = document.getElementById('autofillStrategy').value;
+
+        if (strat === "none") {
+            alert("Choose a strategy first");
+            return;
+        }
+
+        fetch("/autofill_bracket", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ strategy: strat })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Server error: " + res.status);
+            return res.json();
+        })
+        .then(data => {
+            autofillBracket(data);
+        })
+        .catch(err => {
+            console.error("Autofill failed:", err);
+            alert("Autofill failed. Check the console for details.");
+        });
+    });
+
+    // Submit button
+    document.getElementById('submitBracketButton').addEventListener('click', function () {
+        const bracketData = buildBracketJSON();
+
+        fetch("/submit_bracket", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bracket: bracketData })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || data.error);
+        })
+        .catch(err => {
+            console.error("Submit failed:", err);
+            alert("Submission failed. Try again.");
+        });
     });
 </script>
 

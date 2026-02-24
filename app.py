@@ -116,22 +116,21 @@ def leaderboard_page():
 @app.route("/autofill_bracket", methods=["POST"])
 @login_required
 def autofill_bracket():
-    strategy = request.json.get("strategy")
-    weight   = float(request.json.get("weight", 0.25))  # optional, defaults to 0.25
+    data     = request.get_json(force=True)   # force=True handles missing Content-Type
+    strategy = data.get("strategy", "chalk")
+    weight   = float(data.get("weight", 0.25))
 
-    if strategy == "chalk":
-        bracket = chalk_bracket()
-
-    elif strategy == "simulation":
-        # weight: 0 = pure historical seed odds, 1 = pure team strength
-        bracket = simulate_tournament(weight=weight)
-
-    elif strategy == "random":
-        # Fully random — reuse simulate_tournament with weight=1 and noisy strengths
-        bracket = simulate_tournament(weight=1.0)
-
-    else:
-        return jsonify({"error": f"Unknown strategy: {strategy}"}), 400
+    try:
+        if strategy == "chalk":
+            bracket = chalk_bracket()
+        elif strategy == "random":
+            bracket = simulate_tournament(weight=1.0)
+        else:
+            # "simulation" or anything else — use balanced simulation
+            bracket = simulate_tournament(weight=weight)
+    except Exception as e:
+        print("Autofill error:", e)
+        return jsonify({"error": str(e)}), 500
 
     return jsonify(bracket)
 
