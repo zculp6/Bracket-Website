@@ -186,7 +186,7 @@
             return;
         }
 
-        $.post("/autofill",
+        $.post("/autofill_bracket",
             JSON.stringify({ strategy: strat }),
             function (data) {
                 autofillBracket(data);
