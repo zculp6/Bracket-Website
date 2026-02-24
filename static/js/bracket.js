@@ -1,72 +1,35 @@
-/* =========================================================
-   GLOBAL BRACKET STATE
-   ========================================================= */
-
-let bracket = {
-    west: {
-        r64: [],
-        r32: [],
-        s16: [],
-        e8: []
-    },
-    south: {
-        r64: [],
-        r32: [],
-        s16: [],
-        e8: []
-    },
-    east: {
-        r64: [],
-        r32: [],
-        s16: [],
-        e8: []
-    },
-    midwest: {
-        r64: [],
-        r32: [],
-        s16: [],
-        e8: []
-    },
-    final_four: {
-        left: [],
-        right: []
-    },
-    championship: [],
-    champion: null
-};
 
 /* =========================================================
-   TEAM TEMPLATE FOR MATCHUPS
+   TEAM ROW TEMPLATE
    ========================================================= */
 function createTeamRow(seed, name) {
-    return `
-        <div class="team" data-seed="${seed}" data-name="${name}">
-            <span class="seed">${seed}</span>
-            <span class="team-name">${name}</span>
-        </div>
-    `;
+    return `<div class="team" data-seed="${seed}" data-name="${name}">
+                <span class="seed">${seed}</span>
+                <span class="team-name">${name}</span>
+            </div>`;
 }
 
 /* =========================================================
-   DISPLAY ROUND OF 64 TEAMS
+   LOAD INITIAL ROUND OF 64 TEAMS
+   Called once on page load with data from Flask.
+   teamsData = { west: [{seed, name}, ...], south: ..., east: ..., midwest: ... }
    ========================================================= */
 function loadInitialTeams(teamsData) {
     console.log("Loading initial bracket teams...");
 
-    Object.keys(teamsData).forEach(region => {
-        let teams = teamsData[region];
-        let target = document.getElementById(`${region}_r64`);
+    ["west", "south", "east", "midwest"].forEach(region => {
+        const teams  = teamsData[region] || [];
+        const target = document.getElementById(`${region}_r64`);
+        if (!target) { console.warn(`Missing container: ${region}_r64`); return; }
 
         target.innerHTML = "";
 
-        for (let i = 0; i < teams.length; i += 2) {
-            let matchup = `
-                <div class="matchup">
-                    ${createTeamRow(teams[i].seed, teams[i].name)}
-                    ${createTeamRow(teams[i+1].seed, teams[i+1].name)}
-                </div>
-            `;
-            target.innerHTML += matchup;
+        for (let i = 0; i + 1 < teams.length; i += 2) {
+            const div = document.createElement("div");
+            div.className = "matchup";
+            div.innerHTML = createTeamRow(teams[i].seed, teams[i].name)
+                          + createTeamRow(teams[i+1].seed, teams[i+1].name);
+            target.appendChild(div);
         }
     });
 
@@ -74,140 +37,202 @@ function loadInitialTeams(teamsData) {
 }
 
 /* =========================================================
-   ATTACH CLICK HANDLERS TO TEAMS
+   ATTACH CLICK HANDLERS
+   Replaces every .team element with a fresh clone to avoid
+   stacking duplicate listeners on re-renders.
    ========================================================= */
 function attachClickHandlers() {
+    document.querySelectorAll(".team").forEach(oldTeam => {
+        const newTeam = oldTeam.cloneNode(true);
+        oldTeam.parentNode.replaceChild(newTeam, oldTeam);
 
-    document.querySelectorAll(".team").forEach(team => {
+        newTeam.addEventListener("click", function () {
+            const matchup = this.closest(".matchup");
+            if (!matchup) return;
 
-        team.addEventListener("click", function () {
-
-            let parentMatchup = this.parentElement;
-            let teams = parentMatchup.querySelectorAll(".team");
-
-            // Remove previous selection
-            teams.forEach(t => t.classList.remove("selected"));
-
-            // Select clicked team
+            // Deselect sibling, select this
+            matchup.querySelectorAll(".team").forEach(t => {
+                t.classList.remove("selected");
+                t.classList.remove("eliminated");
+            });
             this.classList.add("selected");
 
-            // Advance winner
-            let seed = this.getAttribute("data-seed");
-            let name = this.getAttribute("data-name");
+            // Mark loser
+            matchup.querySelectorAll(".team").forEach(t => {
+                if (t !== this) t.classList.add("eliminated");
+            });
 
-            advanceTeam(parentMatchup, {
-                seed: seed,
-                name: name
+            advanceTeam(matchup, {
+                seed: this.getAttribute("data-seed"),
+                name: this.getAttribute("data-name")
             });
         });
     });
 }
 
 /* =========================================================
-   ADVANCING WINNERS THROUGH ROUNDS
+   FIND REGION & ROUND FROM A MATCHUP ELEMENT
+   The matchup's parent is the .matchups container whose id
+   is like "west_r64", "ff_left", "championship", etc.
    ========================================================= */
-function advanceTeam(matchupElem, teamObj) {
+function getContainerId(matchupElem) {
+    const container = matchupElem.closest(".matchups");
+    return container ? container.id : null;
+}
 
-    let region = findRegionFromElement(matchupElem);
-    let round = findRoundFromElement(matchupElem);
+function findRegionFromMatchup(matchupElem) {
+    const id = getContainerId(matchupElem);
+    if (!id) return null;
+    return id.split("_")[0];   // "west_r64" → "west"
+}
 
-    let nextRoundId = getNextRoundId(region, round);
-
-    if (!nextRoundId) {
-        console.log("Reached final round for region:", region);
-        return;
-    }
-
-    let container = document.getElementById(nextRoundId);
-
-    // Find first open matchup area for next round
-    let matchups = container.querySelectorAll(".matchup");
-    let target = null;
-
-    matchups.forEach(m => {
-        let teams = m.querySelectorAll(".team");
-        if (teams.length < 2) {
-            target = m;
-        }
-    });
-
-    // If no partially filled matchup exists, create a new one
-    if (!target) {
-        let m = document.createElement("div");
-        m.className = "matchup";
-        m.innerHTML = createTeamRow(teamObj.seed, teamObj.name);
-        container.appendChild(m);
-        attachClickHandlers();
-        return;
-    }
-
-    // Add the winner to this matchup
-    target.innerHTML += createTeamRow(teamObj.seed, teamObj.name);
-    attachClickHandlers();
-
-    // If this fills the matchup, the user will be able to click again to advance
+function findRoundFromMatchup(matchupElem) {
+    const id = getContainerId(matchupElem);
+    if (!id) return null;
+    // handles "west_r64", "ff_left", "championship"
+    const parts = id.split("_");
+    return parts.length > 1 ? parts.slice(1).join("_") : id;
 }
 
 /* =========================================================
-   UTIL HELPERS
+   GET NEXT ROUND CONTAINER ID
    ========================================================= */
-
-function findRegionFromElement(elem) {
-    let id = elem.parentElement.id;
-    return id.split("_")[0];  // west_r64 → "west"
-}
-
-function findRoundFromElement(elem) {
-    let id = elem.parentElement.id;
-    return id.split("_")[1];  // west_r64 → "r64"
-}
-
 function getNextRoundId(region, round) {
-    const order = ["r64", "r32", "s16", "e8"];
+    const regionRounds = ["r64", "r32", "s16", "e8"];
+    const idx = regionRounds.indexOf(round);
 
-    let idx = order.indexOf(round);
-
-    // Region sends to Final Four if next == e8
-    if (round === "e8") {
-        if (region === "west" || region === "south") return "ff_left";
-        if (region === "east" || region === "midwest") return "ff_right";
+    // Inside a region → next region round
+    if (idx !== -1 && idx < regionRounds.length - 1) {
+        return `${region}_${regionRounds[idx + 1]}`;
     }
 
-    if (idx === -1 || idx === order.length - 1) return null;
+    // Elite 8 → Final Four
+    if (round === "e8") {
+        return (region === "west" || region === "south") ? "ff_left" : "ff_right";
+    }
 
-    return `${region}_${order[idx + 1]}`;
+    // Final Four → Championship
+    if (round === "left" || round === "right") {
+        return "championship";
+    }
+
+    // Championship → Champion display
+    if (region === "championship") {
+        return "champion_display";
+    }
+
+    return null;
+}
+
+/* =========================================================
+   ADVANCE WINNER TO NEXT ROUND
+   ========================================================= */
+function advanceTeam(matchupElem, teamObj) {
+    const region    = findRegionFromMatchup(matchupElem);
+    const round     = findRoundFromMatchup(matchupElem);
+    const nextId    = getNextRoundId(region, round);
+
+    if (!nextId) return;
+
+    // Special case: champion display div
+    if (nextId === "champion_display") {
+        const champDiv = document.getElementById("champion");
+        if (champDiv) champDiv.innerText = `${teamObj.seed} ${teamObj.name}`;
+        return;
+    }
+
+    const nextContainer = document.getElementById(nextId);
+    if (!nextContainer) { console.warn("Missing next container:", nextId); return; }
+
+    // Figure out which slot this matchup feeds into.
+    // Each pair of matchups in the current round feeds one matchup in the next round.
+    const currentContainer = matchupElem.closest(".matchups");
+    const allMatchups       = Array.from(currentContainer.querySelectorAll(".matchup"));
+    const matchupIndex      = allMatchups.indexOf(matchupElem);
+    const nextMatchupIndex  = Math.floor(matchupIndex / 2);  // pairs feed one slot
+    const slotPosition      = matchupIndex % 2;              // 0 = top team, 1 = bottom team
+
+    // Ensure enough matchup divs exist in next round
+    let nextMatchups = nextContainer.querySelectorAll(".matchup");
+    while (nextMatchups.length <= nextMatchupIndex) {
+        const div = document.createElement("div");
+        div.className = "matchup";
+        nextContainer.appendChild(div);
+        nextMatchups = nextContainer.querySelectorAll(".matchup");
+    }
+
+    const targetMatchup = nextMatchups[nextMatchupIndex];
+
+    // Remove any previously placed team in this slot position
+    const existingTeams = targetMatchup.querySelectorAll(".team");
+    if (existingTeams[slotPosition]) {
+        existingTeams[slotPosition].remove();
+    }
+
+    // Insert at correct slot position
+    const newRow = document.createElement("div");
+    newRow.className = "team";
+    newRow.setAttribute("data-seed", teamObj.seed);
+    newRow.setAttribute("data-name", teamObj.name);
+    newRow.innerHTML = `<span class="seed">${teamObj.seed}</span>
+                        <span class="team-name">${teamObj.name}</span>`;
+
+    const currentTeams = targetMatchup.querySelectorAll(".team");
+    if (slotPosition === 0 || currentTeams.length === 0) {
+        targetMatchup.insertBefore(newRow, targetMatchup.firstChild);
+    } else {
+        targetMatchup.appendChild(newRow);
+    }
+
+    attachClickHandlers();
 }
 
 /* =========================================================
    AUTOFILL BRACKET
+   Accepts the full bracket object from the /autofill_bracket
+   endpoint (which now returns all rounds, not just round_1).
    ========================================================= */
 function autofillBracket(data) {
+    // Clear all round containers first
+    const allContainers = [
+        "west_r64","west_r32","west_s16","west_e8",
+        "south_r64","south_r32","south_s16","south_e8",
+        "east_r64","east_r32","east_s16","east_e8",
+        "midwest_r64","midwest_r32","midwest_s16","midwest_e8",
+        "ff_left","ff_right","championship"
+    ];
+    allContainers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = "";
+    });
 
-    const round1 = data.round_1;
+    const champDiv = document.getElementById("champion");
+    if (champDiv) champDiv.innerText = "";
 
-    const teamsData = {
-        west: round1.slice(0, 16),        // 8 matchups
-        south: round1.slice(16, 32),
-        east: round1.slice(32, 48),
-        midwest: round1.slice(48, 64)
-    };
+    // Populate each container
+    allContainers.forEach(containerId => {
+        const teams = data[containerId];
+        if (!teams || teams.length === 0) return;
 
-    // Load teams into Round 64 regions
-    Object.keys(teamsData).forEach(region => {
-        let teams = teamsData[region];
-        let target = document.getElementById(`${region}_r64`);
-        target.innerHTML = "";
+        const container = document.getElementById(containerId);
+        if (!container) return;
 
-        for (let i = 0; i < teams.length; i += 2) {
-            let m = `
-                <div class="matchup">
-                    ${createTeamRow(teams[i].seed, teams[i].name)}
-                    ${createTeamRow(teams[i+1].seed, teams[i+1].name)}
-                </div>
-            `;
-            target.innerHTML += m;
+        for (let i = 0; i + 1 < teams.length; i += 2) {
+            const div = document.createElement("div");
+            div.className = "matchup";
+            div.innerHTML = createTeamRow(teams[i].seed, teams[i].name)
+                          + createTeamRow(teams[i+1].seed, teams[i+1].name);
+
+            // Mark simulated winner (first of each pair is the winner from simulation)
+            // We store the winner name in data as well if provided
+            container.appendChild(div);
         }
     });
+
+    // Set champion
+    if (data.champion) {
+        if (champDiv) champDiv.innerText = data.champion;
+    }
 
     attachClickHandlers();
 }
@@ -216,28 +241,23 @@ function autofillBracket(data) {
    BUILD JSON FOR SUBMISSION
    ========================================================= */
 function buildBracketJSON() {
-
-    let result = {};
+    const result = {};
 
     document.querySelectorAll(".matchups").forEach(roundElem => {
-        let id = roundElem.id;
-        let matchups = [];
+        const id = roundElem.id;
+        if (!id) return;
 
+        const matchups = [];
         roundElem.querySelectorAll(".matchup").forEach(m => {
-            let teams = m.querySelectorAll(".team.selected");
-            if (teams.length === 1) {
-                matchups.push(teams[0].getAttribute("data-name"));
-            } else {
-                matchups.push(null);
-            }
+            const selected = m.querySelector(".team.selected");
+            matchups.push(selected ? selected.getAttribute("data-name") : null);
         });
 
         result[id] = matchups;
     });
 
-    // Champion
-    let champ = document.getElementById("champion").innerText;
-    result["champion"] = champ;
+    const champDiv = document.getElementById("champion");
+    result["champion"] = champDiv ? champDiv.innerText.trim() : null;
 
     return result;
 }

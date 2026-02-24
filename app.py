@@ -76,21 +76,32 @@ def home():
 @app.route("/bracket")
 @login_required
 def bracket_page():
-    # Build the initial teams structure for the bracket
-    teams_by_region = {"west": [], "south": [], "east": [], "midwest": []}
     standard_order = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
+    regions = ["west", "south", "east", "midwest"]
 
-    # Group teams by region
-    region_teams = {"West": [], "South": [], "East": [], "Midwest": []}
+    # Group teams by region, resolving First Four duplicates by keeping only one per seed
+    region_teams = {r: {} for r in regions}  # seed -> team entry
+
     for team, (seed, region) in SEED_REGION_MAPPING.items():
-        region_teams[region].append({"seed": seed, "name": team})
-
-    # Sort each region by standard bracket order
-    for region, teams in region_teams.items():
         key = region.lower()
-        teams_by_region[key] = sorted(
-            teams, key=lambda t: standard_order.index(t["seed"]) if t["seed"] in standard_order else 99
-        )
+        if seed not in region_teams[key]:
+            # First team with this seed — keep it
+            region_teams[key][seed] = {"seed": seed, "name": team}
+        else:
+            # First Four: two teams share a seed — combine names with " / "
+            # so user knows it's a play-in spot, but only one slot exists
+            existing = region_teams[key][seed]["name"]
+            region_teams[key][seed]["name"] = f"{existing} / {team}"
+
+    # Sort each region by standard bracket seed order
+    teams_by_region = {}
+    for region in regions:
+        seed_map = region_teams[region]
+        ordered = []
+        for seed in standard_order:
+            if seed in seed_map:
+                ordered.append(seed_map[seed])
+        teams_by_region[region] = ordered
 
     return render_template("bracket.html", teams=teams_by_region)
 
