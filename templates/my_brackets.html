@@ -299,6 +299,23 @@ function renderBracket(data, bid) {
                 </div>`;
             container.appendChild(div);
         }
+
+         // Some rounds are stored as one winner per matchup.
+        // Render any trailing single team so Elite 8 / Final Four picks stay visible.
+        if (teams.length % 2 === 1) {
+            const t = teams[teams.length - 1];
+            const n = typeof t === 'string' ? t : t.name;
+            const s = typeof t === 'string' ? '' : (t.seed || '');
+            const w = winners.has(n);
+
+            const div = document.createElement('div');
+            div.className = 'matchup';
+            div.innerHTML =
+                `<div class="team ${w ? 'selected' : ''}">
+                    <span class="seed">${s}</span><span class="team-name">${n}</span>
+                </div>`;
+            container.appendChild(div);
+        }
     });
 
     const ch = document.getElementById('champion_' + bid);
