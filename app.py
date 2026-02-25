@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_required, current_user
 from flask_bcrypt import Bcrypt
-from simulation import simulate_tournament, chalk_bracket
+from simulation import simulate_tournament, chalk_bracket, random_bracket, random_probabilistic_bracket, ranking_bracket
 from simulation import SEED_REGION_MAPPING, REGION_TO_ROUND_ID
 
 # ---------------------------------------
@@ -117,14 +117,18 @@ def leaderboard_page():
 @login_required
 def autofill_bracket():
     data     = request.get_json(force=True)   # force=True handles missing Content-Type
-    strategy = data.get("strategy", "chalk")
+    strategy = data.get("strategy", "chalk", "random", "probabilistic (by seed)", "by ranking")
     weight   = float(data.get("weight", 0.25))
 
     try:
         if strategy == "chalk":
             bracket = chalk_bracket()
         elif strategy == "random":
-            bracket = simulate_tournament(weight=1.0)
+            bracket = random_bracket()
+        elif strategy == "probabilistic (by seed)":
+            bracket = random_probabilistic_bracket()
+        elif strategy == "by ranking":
+            bracket = ranking_bracket()
         else:
             # "simulation" or anything else — use balanced simulation
             bracket = simulate_tournament(weight=weight)

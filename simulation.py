@@ -367,3 +367,215 @@ def chalk_bracket():
 
     result["champion"] = champion
     return result
+
+def random_bracket():
+    """
+    Every game is decided 50/50 completely at random.
+    Structure identical to simulate_tournament().
+    """
+
+    t_df, _ = _load_data()
+    t_df = _simulate_first_four(t_df, weight=0.0)
+
+    standard_order = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
+    regions = ["West", "South", "East", "Midwest"]
+    result = {}
+    region_e8_winners = {}
+
+    for region in regions:
+        r_df = t_df[t_df['Region'] == region].copy()
+        ordered = [r_df[r_df['Seed'] == seed].iloc[0] for seed in standard_order]
+
+        # Round of 64 → Elite 8
+        round_keys = ["r64", "r32", "s16", "e8"]
+        current = ordered
+        for round_key in round_keys:
+            entries = []
+            winners = []
+            for i in range(0, len(current), 2):
+                t1, t2 = current[i], current[i+1]
+
+                # Display entries
+                entries.append({"seed": int(t1['Seed']), "name": t1['team_names']})
+                entries.append({"seed": int(t2['Seed']), "name": t2['team_names']})
+
+                # Winner: 50/50 coin flip
+                winner = np.random.choice([t1, t2])
+                winners.append(winner)
+
+            result[REGION_TO_ROUND_ID[region][round_key]] = entries
+            current = winners
+
+        region_e8_winners[region] = current[0]
+
+    # Final Four → Championship
+    ff_left  = [region_e8_winners[r] for r in ["West", "South"]]
+    ff_right = [region_e8_winners[r] for r in ["East", "Midwest"]]
+
+    result["ff_left"]  = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_left]
+    result["ff_right"] = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_right]
+
+    ff_winners = []
+    for pair in [ff_left, ff_right]:
+        if len(pair) == 2:
+            winner = np.random.choice(pair)
+            ff_winners.append(winner)
+
+    if len(ff_winners) == 2:
+        t1, t2 = ff_winners
+        result["championship"] = [
+            {"seed": int(t1['Seed']), "name": t1['team_names']},
+            {"seed": int(t2['Seed']), "name": t2['team_names']},
+        ]
+        champion = np.random.choice([t1, t2])['team_names']
+    else:
+        result["championship"] = []
+        champion = None
+
+    result["champion"] = champion
+    return result
+
+def random_probabilistic_bracket():
+    """
+    Random based on the probabilities in past_tournament_rounds.csv.
+    Uses seed-based conditional advancement probabilities.
+    """
+
+    t_df, past = _load_data()
+    t_df = _simulate_first_four(t_df, weight=0.0)
+
+    standard_order = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
+    regions = ["West", "South", "East", "Midwest"]
+    result = {}
+    region_e8_winners = {}
+    round_names = ["Round of 64", "Round of 32", "Sweet 16", "Elite 8"]
+
+    for region in regions:
+        r_df = t_df[t_df['Region'] == region]
+        current = [r_df[r_df['Seed'] == seed].iloc[0] for seed in standard_order]
+        round_keys = ["r64", "r32", "s16", "e8"]
+
+        for idx, round_key in enumerate(round_keys):
+            entries = []
+            winners = []
+            round_prob_col = past.columns[idx + 1]  # skip "Seed"
+
+            for i in range(0, len(current), 2):
+                t1, t2 = current[i], current[i+1]
+
+                entries.append({"seed": int(t1["Seed"]), "name": t1["team_names"]})
+                entries.append({"seed": int(t2["Seed"]), "name": t2["team_names"]})
+
+                try:
+                    p1 = past.loc[past['Seed'] == t1["Seed"], round_prob_col].iloc[0]
+                    p2 = past.loc[past['Seed'] == t2["Seed"], round_prob_col].iloc[0]
+                except:
+                    p1 = p2 = 0.5
+
+                # Normalize to a probability based on relative strengths
+                total = p1 + p2 if p1 + p2 > 0 else 1
+                p_win = p1 / total
+
+                winner = t1 if np.random.rand() < p_win else t2
+                winners.append(winner)
+
+            result[REGION_TO_ROUND_ID[region][round_key]] = entries
+            current = winners
+
+        region_e8_winners[region] = current[0]
+
+    # Final Four → Championship (same as above)
+    ff_left = [region_e8_winners[r] for r in ["West", "South"]]
+    ff_right = [region_e8_winners[r] for r in ["East", "Midwest"]]
+
+    result["ff_left"] = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_left]
+    result["ff_right"] = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_right]
+
+    ff_winners = []
+    for pair in [ff_left, ff_right]:
+        if len(pair) == 2:
+            t1, t2 = pair
+            w = t1 if np.random.rand() < 0.5 else t2
+            ff_winners.append(w)
+
+    if len(ff_winners) == 2:
+        t1, t2 = ff_winners
+        result["championship"] = [
+            {"seed": int(t1["Seed"]), "name": t1["team_names"]},
+            {"seed": int(t2["Seed"]), "name": t2["team_names"]},
+        ]
+        champion = t1["team_names"] if np.random.rand() < 0.5 else t2["team_names"]
+    else:
+        result["championship"] = []
+        champion = None
+
+    result["champion"] = champion
+    return result
+
+def ranking_bracket():
+    """
+    Winner is ALWAYS the team with the higher 'strength' value
+    in team_strengths_2025.csv.
+    """
+
+    t_df, _ = _load_data()
+    t_df = _simulate_first_four(t_df, weight=1.0)
+
+    standard_order = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
+    regions = ["West", "South", "East", "Midwest"]
+    result = {}
+    region_e8_winners = {}
+
+    for region in regions:
+        r_df = t_df[t_df['Region'] == region].copy()
+        current = [r_df[r_df['Seed'] == seed].iloc[0] for seed in standard_order]
+        round_keys = ["r64", "r32", "s16", "e8"]
+
+        for round_key in round_keys:
+            entries = []
+            winners = []
+
+            for i in range(0, len(current), 2):
+                t1, t2 = current[i], current[i+1]
+
+                entries.append({"seed": int(t1["Seed"]), "name": t1["team_names"]})
+                entries.append({"seed": int(t2["Seed"]), "name": t2["team_names"]})
+
+                # Higher strength wins
+                winner = t1 if t1["strength"] >= t2["strength"] else t2
+                winners.append(winner)
+
+            result[REGION_TO_ROUND_ID[region][round_key]] = entries
+            current = winners
+
+        region_e8_winners[region] = current[0]
+
+    # Final Four
+    ff_left = [region_e8_winners[r] for r in ["West", "South"]]
+    ff_right = [region_e8_winners[r] for r in ["East", "Midwest"]]
+
+    result["ff_left"]  = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_left]
+    result["ff_right"] = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_right]
+
+    # Final Four winners
+    ff_winners = []
+    for ff in [ff_left, ff_right]:
+        if len(ff) == 2:
+            t1, t2 = ff
+            w = t1 if t1["strength"] >= t2["strength"] else t2
+            ff_winners.append(w)
+
+    if len(ff_winners) == 2:
+        t1, t2 = ff_winners
+        result["championship"] = [
+            {"seed": int(t1["Seed"]), "name": t1["team_names"]},
+            {"seed": int(t2["Seed"]), "name": t2["team_names"]},
+        ]
+        # Higher strength wins the championship
+        champion = t1["team_names"] if t1["strength"] >= t2["strength"] else t2["team_names"]
+    else:
+        result["championship"] = []
+        champion = None
+
+    result["champion"] = champion
+    return result
