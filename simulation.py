@@ -410,15 +410,64 @@ def random_bracket():
 # PROBABILISTIC BY SEED
 # ---------------------------------------
 def random_probabilistic_bracket():
-    # Load team data and historical counts
-    t_df, past = _load_data()
+    """
+    Uses raw historical seed advancement counts to compute head-to-head
+    win probabilities for each specific round.
+
+    For a matchup between seed A and seed B in a given round:
+        p(A wins) = raw_count_A[round] / (raw_count_A[round] + raw_count_B[round])
+
+    This correctly handles:
+    - 1 vs 16 in R64:  154/(154+2)  = 98.7% for the 1-seed  ✓
+    - 16 vs 8 in R32:  2/(2+75)     = 2.6%  for the 16-seed ✓
+      (A 16-seed that upsets in R64 is still a heavy underdog in R32,
+       but has a small nonzero chance rather than an impossible 0%)
+    """
+    base = os.path.dirname(__file__)
+    history_path = os.path.join(base, "past_tournament_rounds.csv")
+    raw = pd.read_csv(history_path)
+    # Drop trailing blank rows
+    raw = raw.dropna(subset=['Seed']).copy()
+    raw['Seed'] = raw['Seed'].astype(int)
+
+    # Build a lookup: seed -> dict of round_name -> raw_count
+    # Columns: Seed, Round of 64, Round of 32, Sweet 16, Elite 8,
+    #          Final Four, Championship Game, Championship Win
+    round_col_map = {
+        "r64": "Round of 32",        # winning R64 = appearing in R32 data
+        "r32": "Sweet 16",
+        "s16": "Elite 8",
+        "e8":  "Final Four",
+        "ff":  "Championship Game",
+        "championship": "Championship Win",
+    }
+
+    def get_raw(seed, round_key):
+        row = raw[raw['Seed'] == seed]
+        if row.empty:
+            return 0
+        col = round_col_map.get(round_key)
+        if col is None or col not in raw.columns:
+            return 0
+        return float(row.iloc[0][col])
+
+    def head_to_head_prob(seed_a, seed_b, round_key):
+        """Returns P(seed_a beats seed_b) for the given round."""
+        a = get_raw(seed_a, round_key)
+        b = get_raw(seed_b, round_key)
+        total = a + b
+        if total == 0:
+            return 0.5  # no data, coin flip
+        return a / total
+
+    # ── load teams ──
+    t_df, _ = _load_data()
     t_df = _simulate_first_four(t_df, weight=0.5)
 
     standard_order = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
     regions = ["West", "South", "East", "Midwest"]
     round_id_keys = ["r64", "r32", "s16", "e8"]
 
-    # Prepare teams by region and seed order
     region_teams = {}
     for region in regions:
         r_df = t_df[t_df['Region'] == region].copy()
@@ -432,18 +481,15 @@ def random_probabilistic_bracket():
     result = {}
     region_e8_winners = {}
 
-    # Simulate each region
     for region in regions:
         current_teams = region_teams[region]
-        round_id_map = REGION_TO_ROUND_ID[region]
+        round_id_map  = REGION_TO_ROUND_ID[region]
 
-        for round_idx, round_key in enumerate(round_id_keys):
+        for round_key in round_id_keys:
             container_id = round_id_map[round_key]
-            round_prob_col = past.columns[round_idx]  # column like "Round of 64"
             team_entries = []
-            winners = []
+            winners      = []
 
-            # Simulate games pairwise
             for i in range(0, len(current_teams), 2):
                 if i + 1 >= len(current_teams):
                     break
@@ -453,53 +499,42 @@ def random_probabilistic_bracket():
                 team_entries.append({"seed": int(t1['Seed']), "name": t1['team_names']})
                 team_entries.append({"seed": int(t2['Seed']), "name": t2['team_names']})
 
-                # Get historical counts summed across all tournaments
-                try:
-                    count1 = past.loc[past['Seed'] == t1['Seed'], round_prob_col].sum()
-                    count2 = past.loc[past['Seed'] == t2['Seed'], round_prob_col].sum()
-                    # Compute probability of t1 winning
-                    p_win_t1 = count1 / (count1 + count2) if (count1 + count2) > 0 else 0.5
-                except (IndexError, KeyError):
-                    p_win_t1 = 0.5
-
-                # Randomly select winner based on probability
-                winner = t1 if np.random.rand() < p_win_t1 else t2
+                p = head_to_head_prob(int(t1['Seed']), int(t2['Seed']), round_key)
+                winner = t1 if np.random.rand() < p else t2
                 winners.append(winner)
 
-            # Store results for this round
             result[container_id] = team_entries
             current_teams = winners
 
-        # Keep Elite 8 winner for Final Four
         if current_teams:
             region_e8_winners[region] = current_teams[0]
 
-    # Set up Final Four
+    # ── Final Four ──
     ff_left_teams  = [region_e8_winners[r] for r in ["West", "South"]  if r in region_e8_winners]
     ff_right_teams = [region_e8_winners[r] for r in ["East", "Midwest"] if r in region_e8_winners]
 
     result["ff_left"]  = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_left_teams]
     result["ff_right"] = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_right_teams]
 
-    # Final Four games (you can later also weight these by historical counts)
     ff_winners = []
     for ff_teams in [ff_left_teams, ff_right_teams]:
         if len(ff_teams) == 2:
-            t1, t2 = ff_teams
-            # Use equal probability for Final Four / Championship
-            ff_winners.append(t1 if np.random.rand() < 0.5 else t2)
+            t1, t2 = ff_teams[0], ff_teams[1]
+            p = head_to_head_prob(int(t1['Seed']), int(t2['Seed']), "ff")
+            ff_winners.append(t1 if np.random.rand() < p else t2)
 
-    # Championship game
+    # ── Championship ──
+    champion = None
     if len(ff_winners) == 2:
-        t1, t2 = ff_winners
+        t1, t2 = ff_winners[0], ff_winners[1]
         result["championship"] = [
             {"seed": int(t1['Seed']), "name": t1['team_names']},
             {"seed": int(t2['Seed']), "name": t2['team_names']},
         ]
-        champion = t1['team_names'] if np.random.rand() < 0.5 else t2['team_names']
+        p = head_to_head_prob(int(t1['Seed']), int(t2['Seed']), "championship")
+        champion = t1['team_names'] if np.random.rand() < p else t2['team_names']
     else:
         result["championship"] = []
-        champion = None
 
     result["champion"] = champion
     return result
