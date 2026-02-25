@@ -297,40 +297,6 @@ def submit_bracket():
 
     return jsonify({"message": "Bracket submitted successfully!"})
 
-@app.route("/admin/set_result", methods=["POST"])
-def set_result():
-    """
-    POST JSON: { "round_id": "west_r32", "slot_index": 0, "winner_name": "Florida" }
-    Protected — add a check for an admin password or env flag.
-    """
-    secret = request.headers.get("X-Admin-Secret")
-    if secret != os.environ.get("ADMIN_SECRET", "changeme"):
-        return jsonify({"error": "Unauthorized"}), 403
-
-    data = request.get_json()
-    round_id    = data["round_id"]
-    slot_index  = data["slot_index"]
-    winner_name = data["winner_name"]
-
-    # Upsert the result
-    existing = TournamentResult.query.filter_by(
-        round_id=round_id, slot_index=slot_index
-    ).first()
-
-    if existing:
-        existing.winner_name = winner_name
-    else:
-        db.session.add(TournamentResult(
-            round_id=round_id,
-            slot_index=slot_index,
-            winner_name=winner_name
-        ))
-
-    db.session.commit()
-    _rescore_all_brackets()
-    return jsonify({"message": f"Result saved and brackets rescored."})
-
-
 def _build_true_results() -> dict:
     """Pull all TournamentResult rows and shape them into the same dict format
     as a user bracket: { "west_r32": ["Florida", "St. John's", ...], ... }"""
