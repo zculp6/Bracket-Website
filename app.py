@@ -22,9 +22,6 @@ rankings_stats = rankings_stats[rankings_stats['team'].isin(TEAMS)].reset_index(
 rankings_stats = rankings_stats.sort_values('strength', ascending=False).reset_index(drop=True)
 rankings_stats['ranking'] = rankings_stats.index + 1
 
-# Keep only teams in TEAMS
-rankings_stats = rankings_stats[rankings_stats['team'].isin(TEAMS)].reset_index(drop=True)
-
 # ---------------------------------------
 # APP INIT
 # ---------------------------------------

@@ -4,53 +4,496 @@
 <meta charset="UTF-8">
 <title>Rankings & Stats 2025</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 16px;
-}
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-}
-th {
-    background-color: #0033a0;
-    color: #fff;
-}
-tr:nth-child(even) { background-color: #f2f2f2; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        background: #020b1f;
+        color: #e8eaf0;
+        font-family: 'DM Sans', sans-serif;
+        min-height: 100vh;
+        padding-bottom: 80px;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+        padding: 48px 40px 32px;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    .page-header h1 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 64px;
+        letter-spacing: 4px;
+        background: linear-gradient(135deg, #fff 30%, #4d8aff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+
+    .page-header p {
+        color: rgba(255,255,255,0.35);
+        font-size: 13px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-family: 'DM Mono', monospace;
+    }
+
+    /* ── CONTROLS BAR ── */
+    .controls-bar {
+        max-width: 1600px;
+        margin: 0 auto 20px;
+        padding: 0 40px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        position: relative;
+        flex: 0 0 260px;
+    }
+
+    .search-box input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        color: #e8eaf0;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13px;
+        padding: 9px 12px 9px 34px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .search-box input:focus { border-color: #4d8aff; }
+    .search-box input::placeholder { color: rgba(255,255,255,0.25); }
+
+    .search-box::before {
+        content: '🔍';
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        pointer-events: none;
+    }
+
+    .col-group-filters {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        font-family: 'DM Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: none;
+        color: rgba(255,255,255,0.4);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: #4d8aff; color: #4d8aff; }
+    .filter-btn.active { background: #0033a0; border-color: #0033a0; color: #fff; }
+
+    .row-count {
+        margin-left: auto;
+        font-family: 'DM Mono', monospace;
+        font-size: 11px;
+        color: rgba(255,255,255,0.25);
+        letter-spacing: 1px;
+    }
+
+    /* ── TABLE WRAP ── */
+    .table-wrap {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 0 40px;
+        overflow-x: auto;
+    }
+
+    .table-wrap::-webkit-scrollbar { height: 5px; }
+    .table-wrap::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+    .table-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 1400px;
+    }
+
+    /* ── COLUMN GROUPS ── */
+    colgroup.grp-info col { background: transparent; }
+    colgroup.grp-offense col { background: rgba(77,138,255,0.03); }
+    colgroup.grp-defense col { background: rgba(255,100,80,0.03); }
+    colgroup.grp-misc col { background: rgba(255,200,50,0.03); }
+
+    thead tr.group-header th {
+        font-family: 'DM Mono', monospace;
+        font-size: 9px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 8px 10px 4px;
+        border-bottom: none;
+        color: rgba(255,255,255,0.25);
+        text-align: center;
+    }
+
+    thead tr.group-header th.grp-info { color: rgba(255,255,255,0.25); }
+    thead tr.group-header th.grp-offense { color: #4d8aff; }
+    thead tr.group-header th.grp-defense { color: #ff6450; }
+    thead tr.group-header th.grp-misc { color: #f0d060; }
+
+    thead tr.col-header th {
+        font-family: 'DM Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 8px 10px;
+        text-align: center;
+        white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        color: rgba(255,255,255,0.5);
+        transition: color 0.15s;
+        position: sticky;
+        top: 0;
+        background: #020b1f;
+    }
+
+    thead tr.col-header th:hover { color: #fff; }
+    thead tr.col-header th.sort-asc::after { content: ' ↑'; color: #4d8aff; }
+    thead tr.col-header th.sort-desc::after { content: ' ↓'; color: #4d8aff; }
+
+    th.col-team { text-align: left !important; min-width: 160px; }
+    th.col-rank { min-width: 60px; }
+
+    tbody tr {
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        transition: background 0.12s;
+    }
+    tbody tr:hover { background: rgba(255,255,255,0.04); }
+    tbody tr.hidden { display: none; }
+
+    td {
+        padding: 10px 10px;
+        text-align: center;
+        white-space: nowrap;
+        color: rgba(255,255,255,0.75);
+    }
+
+    td.col-team {
+        text-align: left;
+        font-weight: 600;
+        color: #e8eaf0;
+        padding-left: 12px;
+    }
+
+    td.col-rank {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 18px;
+        color: rgba(255,255,255,0.2);
+    }
+
+    td.col-strength {
+        font-family: 'DM Mono', monospace;
+        font-size: 12px;
+    }
+
+    /* strength bar */
+    .str-bar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: center;
+    }
+    .str-bar {
+        width: 48px;
+        height: 3px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    .str-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0033a0, #4d8aff);
+        border-radius: 2px;
+    }
+
+    /* seed badge */
+    .seed-badge {
+        display: inline-block;
+        font-family: 'DM Mono', monospace;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(0,51,160,0.4);
+        color: #4d8aff;
+        margin-left: 6px;
+        vertical-align: middle;
+    }
+
+    /* region badge */
+    .region-badge {
+        display: inline-block;
+        font-family: 'DM Mono', monospace;
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.06);
+        color: rgba(255,255,255,0.35);
+        margin-left: 4px;
+        vertical-align: middle;
+    }
+
+    /* highlight top rows */
+    tbody tr[data-rank="1"] td.col-team::before { content: '🥇 '; }
+    tbody tr[data-rank="2"] td.col-team::before { content: '🥈 '; }
+    tbody tr[data-rank="3"] td.col-team::before { content: '🥉 '; }
+
+    /* column visibility */
+    .col-offense { }
+    .col-defense { }
+    .col-misc { }
+
+    body.hide-offense .col-offense,
+    body.hide-offense th.col-offense { display: none; }
+    body.hide-defense .col-defense,
+    body.hide-defense th.col-defense { display: none; }
+    body.hide-misc .col-misc,
+    body.hide-misc th.col-misc { display: none; }
+
+    /* empty state */
+    .no-results {
+        text-align: center;
+        padding: 48px 0;
+        color: rgba(255,255,255,0.2);
+        font-size: 14px;
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .page-header { padding: 32px 20px 20px; }
+        .page-header h1 { font-size: 44px; }
+        .controls-bar, .table-wrap { padding: 0 16px; }
+    }
 </style>
 </head>
 <body>
-<h1>2025 Team Rankings & Stats</h1>
 
-<table>
-    <thead>
-        <tr>
-            <th>Team</th>
-            <th>Ranking</th>
-            <th>Strength</th>
-            <th>Wins</th>
-            <th>Losses</th>
-            <th>PPG</th>
-            <th>Other Stats…</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in data %}
-        <tr>
-            <td>{{ row.team }}</td>
-            <td>{{ row.ranking }}</td>
-            <td>{{ row.strength }}</td>
-            <td>{{ row.wins }}</td>
-            <td>{{ row.losses }}</td>
-            <td>{{ row.points_per_game }}</td>
-            <td><!-- add more stats as needed --></td>
-        </tr>
-        {% endfor %}
-    </tbody>
+<!-- ── NAV (reuse site nav) ── -->
+<nav class="site-nav">
+    <a href="/" class="nav-logo">🏀 MM Bracket</a>
+    <div class="nav-links">
+        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+        <a href="/bracket"><span class="nav-icon">📋</span><span class="nav-label">My Bracket</span></a>
+        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+        <a href="/rankings_stats" class="active"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
+        {% if current_user.is_authenticated %}
+        <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
+        {% else %}
+        <a href="/login"><span class="nav-icon">🔑</span><span class="nav-label">Login</span></a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="page-header">
+    <h1>Rankings & Stats</h1>
+    <p>2025 NCAA Tournament Field — {{ data|length }} teams</p>
+</div>
+
+<div class="controls-bar">
+    <div class="search-box">
+        <input type="text" id="teamSearch" placeholder="Search team…" autocomplete="off">
+    </div>
+    <div class="col-group-filters">
+        <button class="filter-btn active" data-group="offense">Offense</button>
+        <button class="filter-btn active" data-group="defense">Defense</button>
+        <button class="filter-btn active" data-group="misc">Misc</button>
+    </div>
+    <span class="row-count" id="rowCount">{{ data|length }} teams</span>
+</div>
+
+<div class="table-wrap">
+<table id="statsTable">
+<thead>
+    <tr class="group-header">
+        <th colspan="4" class="grp-info"></th>
+        <th colspan="8" class="grp-offense col-offense">— Offense —</th>
+        <th colspan="6" class="grp-defense col-defense">— Defense —</th>
+        <th colspan="9" class="grp-misc col-misc">— Misc —</th>
+    </tr>
+    <tr class="col-header">
+        <!-- Info -->
+        <th class="col-rank" data-col="ranking" data-type="num">Rank</th>
+        <th class="col-team" data-col="team" data-type="str">Team</th>
+        <th data-col="conf" data-type="str">Conf</th>
+        <th data-col="strength" data-type="num">Strength</th>
+
+        <!-- Offense -->
+        <th class="col-offense" data-col="wins" data-type="num">W</th>
+        <th class="col-offense" data-col="losses" data-type="num">L</th>
+        <th class="col-offense" data-col="adj_o" data-type="num">Adj O</th>
+        <th class="col-offense" data-col="adj_t" data-type="num">Pace</th>
+        <th class="col-offense" data-col="efg" data-type="num">eFG%</th>
+        <th class="col-offense" data-col="ftr" data-type="num">FTR</th>
+        <th class="col-offense" data-col="oreb_rate" data-type="num">OReb%</th>
+        <th class="col-offense" data-col="tov_rate" data-type="num">TOV%</th>
+        <th class="col-offense" data-col="two_pt_pct" data-type="num">2P%</th>
+        <th class="col-offense" data-col="three_pt_pct" data-type="num">3P%</th>
+        <th class="col-offense" data-col="ft_pct" data-type="num">FT%</th>
+        <th class="col-offense" data-col="three_fg_rate" data-type="num">3PA%</th>
+
+        <!-- Defense -->
+        <th class="col-defense" data-col="adj_d" data-type="num">Adj D</th>
+        <th class="col-defense" data-col="def_efg" data-type="num">Def eFG%</th>
+        <th class="col-defense" data-col="def_ftr" data-type="num">Def FTR</th>
+        <th class="col-defense" data-col="dreb_rate" data-type="num">DReb%</th>
+        <th class="col-defense" data-col="def_tov_rate" data-type="num">Def TOV%</th>
+        <th class="col-defense" data-col="def_two_pt_pct" data-type="num">Def 2P%</th>
+        <th class="col-defense" data-col="def_three_pt_pct" data-type="num">Def 3P%</th>
+        <th class="col-defense" data-col="def_ft_pct" data-type="num">Def FT%</th>
+        <th class="col-defense" data-col="def_three_fg_rate" data-type="num">Def 3PA%</th>
+
+        <!-- Misc -->
+        <th class="col-misc" data-col="block_rate" data-type="num">Blk%</th>
+        <th class="col-misc" data-col="block_rate_allowed" data-type="num">Blk Alw%</th>
+        <th class="col-misc" data-col="assist_rate" data-type="num">Ast%</th>
+        <th class="col-misc" data-col="def_assist_rate" data-type="num">Def Ast%</th>
+        <th class="col-misc" data-col="wab" data-type="num">WAB</th>
+        <th class="col-misc" data-col="games" data-type="num">GP</th>
+    </tr>
+</thead>
+<tbody>
+{% for row in data %}
+<tr data-rank="{{ row.ranking }}" data-team="{{ row.team | lower }}">
+    <td class="col-rank">{{ row.ranking }}</td>
+    <td class="col-team">
+        {{ row.team }}
+        {% if row.Seed is defined and row.Seed %}<span class="seed-badge">#{{ row.Seed }}</span>{% endif %}
+    </td>
+    <td>{{ row.conf if row.conf else '—' }}</td>
+    <td class="col-strength">
+        <div class="str-bar-wrap">
+            <div class="str-bar"><div class="str-fill" style="width:{{ ((row.strength | float) * 100) | round(1) }}%"></div></div>
+            {{ "%.3f" | format(row.strength | float) }}
+        </div>
+    </td>
+
+    <!-- Offense -->
+    <td class="col-offense">{{ row.wins if row.wins else '—' }}</td>
+    <td class="col-offense">{{ row.losses if row.losses else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format(row.adj_o | float) if row.adj_o else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format(row.adj_t | float) if row.adj_t else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format((row.efg | float) * 100) if row.efg else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format((row.ftr | float) * 100) if row.ftr else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format((row.oreb_rate | float) * 100) if row.oreb_rate else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format((row.tov_rate | float) * 100) if row.tov_rate else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format((row.two_pt_pct | float) * 100) if row.two_pt_pct else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format((row.three_pt_pct | float) * 100) if row.three_pt_pct else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format((row.ft_pct | float) * 100) if row.ft_pct else '—' }}</td>
+    <td class="col-offense">{{ "%.1f" | format((row.three_fg_rate | float) * 100) if row.three_fg_rate else '—' }}</td>
+
+    <!-- Defense -->
+    <td class="col-defense">{{ "%.1f" | format(row.adj_d | float) if row.adj_d else '—' }}</td>
+    <td class="col-defense">{{ "%.1f" | format((row.def_efg | float) * 100) if row.def_efg else '—' }}</td>
+    <td class="col-defense">{{ "%.1f" | format((row.def_ftr | float) * 100) if row.def_ftr else '—' }}</td>
+    <td class="col-defense">{{ "%.1f" | format((row.dreb_rate | float) * 100) if row.dreb_rate else '—' }}</td>
+    <td class="col-defense">{{ "%.1f" | format((row.def_tov_rate | float) * 100) if row.def_tov_rate else '—' }}</td>
+    <td class="col-defense">{{ "%.1f" | format((row.def_two_pt_pct | float) * 100) if row.def_two_pt_pct else '—' }}</td>
+    <td class="col-defense">{{ "%.1f" | format((row.def_three_pt_pct | float) * 100) if row.def_three_pt_pct else '—' }}</td>
+    <td class="col-defense">{{ "%.1f" | format((row.def_ft_pct | float) * 100) if row.def_ft_pct else '—' }}</td>
+    <td class="col-defense">{{ "%.1f" | format((row.def_three_fg_rate | float) * 100) if row.def_three_fg_rate else '—' }}</td>
+
+    <!-- Misc -->
+    <td class="col-misc">{{ "%.1f" | format((row.block_rate | float) * 100) if row.block_rate else '—' }}</td>
+    <td class="col-misc">{{ "%.1f" | format((row.block_rate_allowed | float) * 100) if row.block_rate_allowed else '—' }}</td>
+    <td class="col-misc">{{ "%.1f" | format((row.assist_rate | float) * 100) if row.assist_rate else '—' }}</td>
+    <td class="col-misc">{{ "%.1f" | format((row.def_assist_rate | float) * 100) if row.def_assist_rate else '—' }}</td>
+    <td class="col-misc">{{ "%.2f" | format(row.wab | float) if row.wab else '—' }}</td>
+    <td class="col-misc">{{ row.games if row.games else '—' }}</td>
+</tr>
+{% endfor %}
+</tbody>
 </table>
+<div class="no-results" id="noResults">No teams match your search.</div>
+</div>
+
+<script>
+/* ── SEARCH ── */
+const searchInput = document.getElementById('teamSearch');
+const rows = document.querySelectorAll('#statsTable tbody tr');
+const rowCount = document.getElementById('rowCount');
+const noResults = document.getElementById('noResults');
+
+function updateCount() {
+    const visible = Array.from(rows).filter(r => !r.classList.contains('hidden')).length;
+    rowCount.textContent = visible + ' team' + (visible !== 1 ? 's' : '');
+    noResults.style.display = visible === 0 ? 'block' : 'none';
+}
+
+searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase();
+    rows.forEach(r => {
+        r.classList.toggle('hidden', !r.dataset.team.includes(q));
+    });
+    updateCount();
+});
+
+/* ── COLUMN GROUP TOGGLES ── */
+document.querySelectorAll('.filter-btn[data-group]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        const group = btn.dataset.group;
+        document.body.classList.toggle('hide-' + group, !btn.classList.contains('active'));
+    });
+});
+
+/* ── SORT ── */
+let sortCol = 'ranking', sortDir = 1;
+
+document.querySelectorAll('th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        const type = th.dataset.type;
+        if (sortCol === col) { sortDir *= -1; }
+        else { sortCol = col; sortDir = 1; }
+
+        document.querySelectorAll('th[data-col]').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+        th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+
+        const colHeaders = Array.from(document.querySelectorAll('tr.col-header th'));
+        const colIndex = colHeaders.indexOf(th);
+
+        const tbody = document.querySelector('#statsTable tbody');
+        const rowArr = Array.from(tbody.querySelectorAll('tr'));
+        rowArr.sort((a, b) => {
+            const aVal = a.querySelectorAll('td')[colIndex]?.textContent.trim().replace(/[^0-9.\-]/g,'') || '';
+            const bVal = b.querySelectorAll('td')[colIndex]?.textContent.trim().replace(/[^0-9.\-]/g,'') || '';
+            if (type === 'num') {
+                return (parseFloat(aVal) - parseFloat(bVal)) * sortDir;
+            }
+            return aVal.localeCompare(bVal) * sortDir;
+        });
+        rowArr.forEach(r => tbody.appendChild(r));
+    });
+});
+
+updateCount();
+</script>
 
 </body>
 </html>
