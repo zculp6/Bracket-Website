@@ -117,7 +117,8 @@ def bracket_page():
 @login_required
 def view_bracket(bracket_id):
     bracket = Bracket.query.get_or_404(bracket_id)
-    return render_template("view_bracket.html", bracket=bracket)
+    true_results = _build_true_results()
+    return render_template("view_bracket.html", bracket=bracket, true_results=true_results)
 
 @app.route("/my_brackets")
 @login_required
@@ -126,7 +127,8 @@ def my_brackets_page():
                 .filter_by(user_id=current_user.id)
                 .order_by(Bracket.entry_number)
                 .all())
-    return render_template("my_brackets.html", brackets=brackets)
+    true_results = _build_true_results()
+    return render_template("my_brackets.html", brackets=brackets, true_results=true_results)
 
 @app.route("/leaderboard")
 def leaderboard_page():
