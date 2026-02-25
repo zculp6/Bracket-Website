@@ -9,6 +9,12 @@ from scoring import score_bracket
 from models import TournamentResult, Bracket
 import pandas as pd
 
+# To reset the database in terminal:
+# psql postgresql://bracket_db_jqvw_user:qbJb8ZCDQRNyRg5BLE9BCxG59VfIapvh@dpg-d6f0qho8tnhs73b5vpeg-a.ohio-postgres.render.com/bracket_db_jqvw
+# DROP SCHEMA public CASCADE;
+# CREATE SCHEMA public;
+# GRANT ALL ON SCHEMA public TO bracket_db_jqvw_user;
+
 team_strengths_2025 = pd.read_csv("team_strengths_2025.csv")
 
 try:
@@ -335,55 +341,6 @@ def submit_bracket():
     db.session.commit()
 
     return jsonify({"message": "Bracket submitted successfully!"})
-
-def _build_true_results() -> dict:
-    """Pull all TournamentResult rows and shape them into the same dict format
-    as a user bracket: { "west_r32": ["Florida", "St. John's", ...], ... }"""
-    results = TournamentResult.query.all()
-    shaped = {}
-    for r in results:
-        if r.round_id not in shaped:
-            shaped[r.round_id] = []
-        # Extend list to fit slot_index
-        while len(shaped[r.round_id]) <= r.slot_index:
-            shaped[r.round_id].append(None)
-        shaped[r.round_id][r.slot_index] = r.winner_name
-    return shaped
-
-def _rescore_all_brackets():
-    """
-    Recalculate scores for all brackets and return:
-    - brackets_scored: total number of brackets scored
-    - top_score: the highest score among all brackets
-    """
-    try:
-        # Example: fetch all brackets from DB
-        brackets = Bracket.query.all()  # adjust if you use a different ORM or storage
-
-        brackets_scored = 0
-        top_score = 0
-
-        for bracket in brackets:
-            # Compute score for this bracket
-            score = 0
-            for game in bracket.games:  # adjust if your data structure differs
-                if game.selected_winner == game.actual_winner:
-                    score += game.points  # or however you calculate points
-
-            bracket.score = score
-            brackets_scored += 1
-
-            if score > top_score:
-                top_score = score
-
-        # Commit updates if using DB
-        db.session.commit()
-
-        return brackets_scored, top_score
-
-    except Exception as e:
-        print(f"Error rescoring brackets: {e}")
-        return 0, 0  # fallback if something goes wrong
 
 # ---------------------------------------
 # RUN SERVER
