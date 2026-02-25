@@ -128,10 +128,6 @@ function submitBracket() {
     }
 
     const userId = getUserId();
-    if (!userId) {
-        alert('Could not determine user. Please log in again.');
-        return;
-    }
 
     const submitBtn = document.getElementById('submitBracketButton');
     if (submitBtn) {
