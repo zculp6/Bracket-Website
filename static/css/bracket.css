@@ -208,24 +208,41 @@ body {
 
 /* =======================
    FINAL FOUR TAB
-   Different layout: 3 columns (FF Left, FF Right, Championship)
+   Left: Semifinal | Center: Championship + Champion below | Right: Semifinal
    =======================*/
 
-.bracket-region-panel.final-four-panel .bracket-columns {
+.bracket-region-panel.final-four-panel .bracket-columns.final-four-columns {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
     min-height: 280px;
+    gap: 24px;
 }
 
 .bracket-region-panel.final-four-panel .bracket-column {
-    min-width: 160px;
+    min-width: 140px;
 }
 
-.bracket-region-panel.final-four-panel .bracket-column.round-ff {
+.bracket-region-panel.final-four-panel .round-ff-left,
+.bracket-region-panel.final-four-panel .round-ff-right {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.bracket-region-panel.final-four-panel .bracket-column.round-champ {
+.bracket-region-panel.final-four-panel .round-champ-center {
     flex: 1;
-    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.bracket-region-panel.final-four-panel .round-champ-center .national-champion {
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
 }
 
 .champion {
