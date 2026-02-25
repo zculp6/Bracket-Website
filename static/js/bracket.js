@@ -1,8 +1,11 @@
 /* =========================================================
    TEAM ROW TEMPLATE
    ========================================================= */
-function createTeamRow(seed, name) {
-    return `<div class="team" data-seed="${seed}" data-name="${name}">
+function createTeamRow(seed, name, isSelected = false, isEliminated = false) {
+    let classes = "team";
+    if (isSelected)   classes += " selected";
+    if (isEliminated) classes += " eliminated";
+    return `<div class="${classes}" data-seed="${seed}" data-name="${name}">
                 <span class="seed">${seed}</span>
                 <span class="team-name">${name}</span>
             </div>`;
