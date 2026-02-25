@@ -120,12 +120,15 @@ body {
     color: #666;
 }
 
-/* ESPN-style: flex columns with space-between for bracket tree flow */
+/* ESPN-style: each next-round game centered between the two games that feed into it
+   R64: 8 games (flex 1 each)
+   R32: 4 games (flex 2 each) - each between 2 R64 games
+   S16: 2 games (flex 4 each) - each between 4 R64 games
+   E8:  1 game (flex 8) - centered between all 8 */
 
 .bracket-region-panel:not(.final-four-panel) .bracket-column {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
 }
 
 .bracket-region-panel:not(.final-four-panel) .round-r64 .matchups,
@@ -134,9 +137,15 @@ body {
 .bracket-region-panel:not(.final-four-panel) .round-e8 .matchups {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     flex: 1;
+    gap: 0;
+    min-height: 0;
 }
+
+.bracket-region-panel:not(.final-four-panel) .round-r64 .matchup { flex: 1; min-height: 0; }
+.bracket-region-panel:not(.final-four-panel) .round-r32 .matchup { flex: 2; min-height: 0; }
+.bracket-region-panel:not(.final-four-panel) .round-s16 .matchup { flex: 4; min-height: 0; }
+.bracket-region-panel:not(.final-four-panel) .round-e8 .matchup  { flex: 8; min-height: 0; }
 
 /* =======================
    MATCHUPS
