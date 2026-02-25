@@ -2,14 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="user-id" content="{{ current_user.id }}">
     <title>March Madness Bracket</title>
-
-    <!-- Bracket CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bracket.css') }}">
-
-    <!-- jQuery for simplicity -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 </head>
 <body>
 
@@ -31,57 +26,43 @@
 
 <div id="bracketContainer">
 
-    <!-- ========================= -->
-    <!--        LEFT SIDE          -->
-    <!-- ========================= -->
+    <!-- LEFT SIDE -->
     <div class="side left-side">
 
-        <!-- WEST REGION -->
         <div class="region">
             <h2 class="region-title">West</h2>
-
             <div class="round round-64">
                 <h3>Round of 64</h3>
-                <div class="matchups" id="west_r64">
-                    <!-- JS will insert matchups here -->
-                </div>
+                <div class="matchups" id="west_r64"></div>
             </div>
-
             <div class="round round-32">
                 <h3>Round of 32</h3>
                 <div class="matchups" id="west_r32"></div>
             </div>
-
             <div class="round sweet-16">
                 <h3>Sweet 16</h3>
                 <div class="matchups" id="west_s16"></div>
             </div>
-
             <div class="round elite-8">
                 <h3>Elite 8</h3>
                 <div class="matchups" id="west_e8"></div>
             </div>
         </div>
 
-        <!-- SOUTH REGION -->
         <div class="region">
             <h2 class="region-title">South</h2>
-
             <div class="round round-64">
                 <h3>Round of 64</h3>
                 <div class="matchups" id="south_r64"></div>
             </div>
-
             <div class="round round-32">
                 <h3>Round of 32</h3>
                 <div class="matchups" id="south_r32"></div>
             </div>
-
             <div class="round sweet-16">
                 <h3>Sweet 16</h3>
                 <div class="matchups" id="south_s16"></div>
             </div>
-
             <div class="round elite-8">
                 <h3>Elite 8</h3>
                 <div class="matchups" id="south_e8"></div>
@@ -90,79 +71,60 @@
 
     </div>
 
-    <!-- ========================= -->
-    <!--      FINAL FOUR AREA      -->
-    <!-- ========================= -->
+    <!-- FINAL FOUR -->
     <div class="final-four-area">
-
         <div class="final-four">
             <h2>Final Four</h2>
-
             <div class="matchups" id="ff_left"></div>
             <div class="matchups" id="ff_right"></div>
         </div>
-
         <div class="championship">
             <h2>Championship</h2>
             <div class="matchups" id="championship"></div>
         </div>
-
         <div class="national-champion">
             <h2>National Champion</h2>
             <div class="champion" id="champion"></div>
         </div>
-
     </div>
 
-    <!-- ========================= -->
-    <!--        RIGHT SIDE         -->
-    <!-- ========================= -->
+    <!-- RIGHT SIDE -->
     <div class="side right-side">
 
-        <!-- EAST REGION -->
         <div class="region">
             <h2 class="region-title">East</h2>
-
             <div class="round round-64">
                 <h3>Round of 64</h3>
                 <div class="matchups" id="east_r64"></div>
             </div>
-
             <div class="round round-32">
                 <h3>Round of 32</h3>
                 <div class="matchups" id="east_r32"></div>
             </div>
-
             <div class="round sweet-16">
                 <h3>Sweet 16</h3>
                 <div class="matchups" id="east_s16"></div>
             </div>
-
             <div class="round elite-8">
                 <h3>Elite 8</h3>
                 <div class="matchups" id="east_e8"></div>
             </div>
         </div>
 
-        <!-- MIDWEST REGION -->
         <div class="region">
             <h2 class="region-title">Midwest</h2>
-
             <div class="round round-64">
                 <h3>Round of 64</h3>
                 <div class="matchups" id="midwest_r64"></div>
             </div>
-
             <div class="round round-32">
                 <h3>Round of 32</h3>
                 <div class="matchups" id="midwest_r32"></div>
             </div>
-
             <div class="round sweet-16">
                 <h3>Sweet 16</h3>
                 <div class="matchups" id="midwest_s16"></div>
             </div>
-
             <div class="round elite-8">
                 <h3>Elite 8</h3>
                 <div class="matchups" id="midwest_e8"></div>
@@ -173,63 +135,24 @@
 
 </div>
 
-<!-- ========================= -->
-<!--        JAVASCRIPT         -->
-<!-- ========================= -->
-<script src="{{ url_for('static', filename='js/bracket.js') }}"></script>
-
-<script>
-    // Autofill button
-    $('#autofillButton').click(function () {
-        let strat = $('#autofillStrategy').val();
-
-        if (strat === "none") {
-            alert("Choose a strategy");
-            return;
-        }
-
-        $.post("/autofill_bracket",
-            JSON.stringify({ strategy: strat }),
-            function (data) {
-                autofillBracket(data);
-            },
-            "json"
-        );
-    });
-
-    // Submit Bracket
-    $('#submitBracketButton').click(function () {
-        let bracket = buildBracketJSON(); // From bracket.js
-
-        $.post("/submit_bracket",
-            JSON.stringify({ bracket: bracket }),
-            function (data) {
-                alert("Bracket submitted!");
-            },
-            "json"
-        );
-    });
-</script>
-
+<!-- JS: loaded once each, no jQuery, no duplicate handlers -->
 <script src="{{ url_for('static', filename='js/bracket.js') }}"></script>
 <script src="{{ url_for('static', filename='js/autofill.js') }}"></script>
 
 <script>
-    // Load teams on page load
+    // Populate Round of 64 on load
     const initialTeams = {{ teams | tojson }};
     document.addEventListener("DOMContentLoaded", function () {
         loadInitialTeams(initialTeams);
     });
 
-    // Autofill button
+    // Autofill
     document.getElementById('autofillButton').addEventListener('click', function () {
         const strat = document.getElementById('autofillStrategy').value;
-
         if (strat === "none") {
-            alert("Choose a strategy first");
+            alert("Please choose a strategy first.");
             return;
         }
-
         fetch("/autofill_bracket", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -240,6 +163,7 @@
             return res.json();
         })
         .then(data => {
+            if (data.error) { alert("Error: " + data.error); return; }
             autofillBracket(data);
         })
         .catch(err => {
@@ -248,10 +172,9 @@
         });
     });
 
-    // Submit button
+    // Submit
     document.getElementById('submitBracketButton').addEventListener('click', function () {
         const bracketData = buildBracketJSON();
-
         fetch("/submit_bracket", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
