@@ -225,7 +225,19 @@ function autofillBracket(data) {
     });
 
     // Set champion
-    if (data.champion && champDiv) champDiv.innerText = data.champion;
+  if (data.champion) {
+      // Highlight champion in the "championship" matchup
+      const champMatchup = document.getElementById("championship");
+      if (champMatchup) {
+          champMatchup.innerHTML = createTeamRow("", data.champion, true, false);
+      }
+  
+      // Also update the final champion display (text)
+      const champDiv = document.getElementById("champion");
+      if (champDiv) {
+          champDiv.innerText = data.champion;
+      }
+  }
 
     attachHandlersToUnbound();
 }
