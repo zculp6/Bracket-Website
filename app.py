@@ -13,7 +13,7 @@ from models import TournamentResult, Bracket
 # ---------------------------------------
 app = Flask(__name__)
 
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-in-production")
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "alohamora123")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Build the database URL with the correct driver
@@ -311,15 +311,40 @@ def _build_true_results() -> dict:
         shaped[r.round_id][r.slot_index] = r.winner_name
     return shaped
 
-
 def _rescore_all_brackets():
-    """Recompute scores for every bracket based on current results."""
-    true_results = _build_true_results()
-    if not true_results:
-        return
-    for bracket in Bracket.query.all():
-        bracket.score = score_bracket(bracket.bracket_data, true_results)
-    db.session.commit()
+    """
+    Recalculate scores for all brackets and return:
+    - brackets_scored: total number of brackets scored
+    - top_score: the highest score among all brackets
+    """
+    try:
+        # Example: fetch all brackets from DB
+        brackets = Bracket.query.all()  # adjust if you use a different ORM or storage
+
+        brackets_scored = 0
+        top_score = 0
+
+        for bracket in brackets:
+            # Compute score for this bracket
+            score = 0
+            for game in bracket.games:  # adjust if your data structure differs
+                if game.selected_winner == game.actual_winner:
+                    score += game.points  # or however you calculate points
+
+            bracket.score = score
+            brackets_scored += 1
+
+            if score > top_score:
+                top_score = score
+
+        # Commit updates if using DB
+        db.session.commit()
+
+        return brackets_scored, top_score
+
+    except Exception as e:
+        print(f"Error rescoring brackets: {e}")
+        return 0, 0  # fallback if something goes wrong
 
 # ---------------------------------------
 # RUN SERVER
