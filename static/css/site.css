@@ -74,3 +74,89 @@ button:hover {
 .switch-auth a:hover {
     text-decoration: underline;
 }
+
+/* =====================
+   SHARED NAVBAR STYLES
+   ===================== */
+
+.site-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+    height: 64px;
+    background: #0033a0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.site-nav .nav-logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.site-nav .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.site-nav .nav-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255,255,255,0.82);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.site-nav .nav-links a:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+
+.site-nav .nav-links a.active {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    font-weight: 700;
+}
+
+.site-nav .nav-links a.btn-accent {
+    background: #fff;
+    color: #0033a0;
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+.site-nav .nav-links a.btn-accent:hover {
+    background: #e8eeff;
+    color: #001f7a;
+}
+
+.site-nav .nav-links a.btn-danger {
+    background: rgba(255,80,80,0.18);
+    color: #ffdddd;
+}
+.site-nav .nav-links a.btn-danger:hover {
+    background: rgba(255,80,80,0.32);
+    color: #fff;
+}
+
+.nav-icon { font-size: 15px; }
+
+@media (max-width: 640px) {
+    .site-nav { padding: 0 16px; }
+    .site-nav .nav-links a .nav-label { display: none; }
+    .site-nav .nav-links a { padding: 8px 10px; font-size: 16px; }
+}
