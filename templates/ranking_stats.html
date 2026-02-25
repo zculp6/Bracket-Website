@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rankings & Stats 2025</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+<style>
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 16px;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+th {
+    background-color: #0033a0;
+    color: #fff;
+}
+tr:nth-child(even) { background-color: #f2f2f2; }
+</style>
+</head>
+<body>
+<h1>2025 Team Rankings & Stats</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Team</th>
+            <th>Ranking</th>
+            <th>Strength</th>
+            <th>Wins</th>
+            <th>Losses</th>
+            <th>PPG</th>
+            <th>Other Stats…</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in data %}
+        <tr>
+            <td>{{ row.team }}</td>
+            <td>{{ row.ranking }}</td>
+            <td>{{ row.strength }}</td>
+            <td>{{ row.wins }}</td>
+            <td>{{ row.losses }}</td>
+            <td>{{ row.points_per_game }}</td>
+            <td><!-- add more stats as needed --></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

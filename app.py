@@ -4,9 +4,25 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_required, current_user
 from flask_bcrypt import Bcrypt
 from simulation import simulate_tournament, chalk_bracket, random_bracket, random_probabilistic_bracket, ranking_bracket
-from simulation import SEED_REGION_MAPPING, REGION_TO_ROUND_ID
+from simulation import SEED_REGION_MAPPING, REGION_TO_ROUND_ID, TEAMS
 from scoring import score_bracket
 from models import TournamentResult, Bracket
+import pandas as pd
+
+# Load data
+team_strengths_2025 = pd.read_csv("team_strengths_2025.csv")  # has 'team', 'ranking', 'strength'
+cbb_25 = pd.read_csv("cbb_25.csv")  # has 'team', 'wins', 'losses', 'points_per_game', etc.
+
+# Merge datasets on team name
+rankings_stats = pd.merge(
+    team_strengths_2025,
+    cbb_25,
+    how="left",
+    on="team"
+)
+
+# Keep only teams in TEAMS
+rankings_stats = rankings_stats[rankings_stats['team'].isin(TEAMS)].reset_index(drop=True)
 
 # ---------------------------------------
 # APP INIT
@@ -99,6 +115,11 @@ def leaderboard_page():
     brackets = Bracket.query.order_by(Bracket.score.desc()).all()
     return render_template("leaderboard.html", brackets=brackets)
 
+@app.route("/rankings_stats")
+def rankings_stats_page():
+    # Send the merged data to the frontend
+    data_json = rankings_stats.to_dict(orient="records")
+    return render_template("rankings_stats.html", data=data_json)
 
 # ---------------------------------------
 # API ENDPOINTS
