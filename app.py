@@ -107,6 +107,35 @@ def bracket_page():
 
     return render_template("bracket.html", teams=teams_by_region)
 
+# -------------------------------------------------------
+# MY BRACKETS  (view-only list of current user's entries)
+# -------------------------------------------------------
+@app.route("/my_brackets")
+@login_required
+def my_brackets_page():
+    brackets = Bracket.query.filter_by(user_id=current_user.id)\
+                            .order_by(Bracket.entry_number).all()
+    # Build initial teams structure (same as bracket_page) for the read-only viewer
+    standard_order = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
+    regions = ["west", "south", "east", "midwest"]
+    region_teams = {r: {} for r in regions}
+    for team, (seed, region) in SEED_REGION_MAPPING.items():
+        key = region.lower()
+        if seed not in region_teams[key]:
+            region_teams[key][seed] = {"seed": seed, "name": team}
+        else:
+            existing_name = region_teams[key][seed]["name"]
+            region_teams[key][seed]["name"] = f"{existing_name} / {team}"
+    teams_by_region = {}
+    for region in regions:
+        seed_map = region_teams[region]
+        teams_by_region[region] = [seed_map[s] for s in standard_order if s in seed_map]
+
+    return render_template(
+        "my_brackets.html",
+        brackets=brackets,
+        teams=teams_by_region
+    )
 
 @app.route("/leaderboard")
 def leaderboard_page():
@@ -118,6 +147,7 @@ def rankings_stats_page():
     # Send the merged data to the frontend
     data_json = rankings_stats.to_dict(orient="records")
     return render_template("ranking_stats.html", data=data_json)
+
 
 # ---------------------------------------
 # API ENDPOINTS

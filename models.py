@@ -12,6 +12,7 @@ class Bracket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     entry_number = db.Column(db.Integer, nullable=False)  # 1 or 2
+    bracket_name = db.Column(db.String(100), nullable=False, default='My Bracket')
     bracket_data = db.Column(db.JSON, nullable=False)
     score = db.Column(db.Integer, default=0)
 

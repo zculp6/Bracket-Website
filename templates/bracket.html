@@ -209,6 +209,22 @@
         .btn-apply:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
         .btn-apply:disabled { opacity: 0.35; cursor: not-allowed; }
 
+        /* ── MY BRACKETS LINK ── */
+        .my-brackets-btn {
+            padding: 9px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.85);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            text-decoration: none;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .my-brackets-btn:hover { background: rgba(255,255,255,0.18); }
+
         /* ── SUBMIT BUTTON ── */
         #submitBracketButton {
             padding: 9px 18px;
@@ -245,6 +261,115 @@
             display: none;
         }
         .panel-backdrop.open { display: block; }
+
+        /* ── SUBMIT MODAL ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 11, 31, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal-box {
+            background: #0d1a3a;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 32px 28px 28px;
+            width: 400px;
+            max-width: calc(100vw - 32px);
+            box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+            transform: translateY(12px);
+            transition: transform 0.2s;
+        }
+        .modal-overlay.open .modal-box {
+            transform: translateY(0);
+        }
+        .modal-box h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 2px;
+            color: #fff;
+            margin: 0 0 6px;
+        }
+        .modal-box p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            margin: 0 0 22px;
+        }
+        .modal-label {
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+            font-family: 'DM Sans', sans-serif;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .modal-input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1.5px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: #e8eaf0;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            padding: 10px 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .modal-input:focus { border-color: #4d8aff; }
+        .modal-char-count {
+            font-size: 11px;
+            color: rgba(255,255,255,0.2);
+            text-align: right;
+            margin-top: 4px;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        .modal-cancel {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.6);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .modal-cancel:hover { background: rgba(255,255,255,0.1); }
+        .modal-confirm {
+            flex: 2;
+            padding: 10px;
+            background: #f0d060;
+            border: none;
+            border-radius: 8px;
+            color: #020b1f;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, opacity 0.15s;
+        }
+        .modal-confirm:hover { background: #ffe066; }
+        .modal-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
 
         @media (max-width: 600px) {
             .strategy-panel { width: calc(100vw - 24px); right: -12px; }
@@ -343,7 +468,7 @@
                                 <span class="card-tag">team strength</span>
                             </div>
                         </div>
-                        <div class="card-desc">Uses 2025 team strength ratings to pick winners. Data-driven upset hunting.</div>
+                        <div class="card-desc">Data-driven upset hunting.</div>
                     </div>
 
                     <div class="strategy-card wide"
@@ -370,6 +495,7 @@
             </div>
         </div>
 
+        <a href="/my_brackets" class="my-brackets-btn">📋 My Brackets</a>
         <button id="submitBracketButton">✅ Submit Bracket</button>
     </div>
 </div>
@@ -433,6 +559,28 @@
 
     </div>
 
+</div>
+
+<!-- ========================= SUBMIT MODAL ========================= -->
+<div class="modal-overlay" id="submitModal">
+    <div class="modal-box">
+        <h2>Name Your Bracket</h2>
+        <p>Give your bracket a name before locking it in.</p>
+        <label class="modal-label" for="bracketNameInput">Bracket Name</label>
+        <input
+            class="modal-input"
+            id="bracketNameInput"
+            type="text"
+            maxlength="50"
+            placeholder="e.g. Duke All Day, Chaos Theory…"
+            autocomplete="off"
+        >
+        <div class="modal-char-count"><span id="nameCharCount">0</span> / 50</div>
+        <div class="modal-actions">
+            <button class="modal-cancel" id="modalCancel">Cancel</button>
+            <button class="modal-confirm" id="modalConfirm">🏀 Lock It In</button>
+        </div>
+    </div>
 </div>
 
 <!-- ========================= JS ========================= -->
@@ -531,19 +679,62 @@
         });
     }
 
-    /* ── SUBMIT BRACKET ── */
-    document.getElementById('submitBracketButton').addEventListener('click', function () {
+    /* ── SUBMIT MODAL LOGIC ── */
+    const submitModal  = document.getElementById('submitModal');
+    const nameInput    = document.getElementById('bracketNameInput');
+    const charCount    = document.getElementById('nameCharCount');
+    const modalCancel  = document.getElementById('modalCancel');
+    const modalConfirm = document.getElementById('modalConfirm');
+
+    document.getElementById('submitBracketButton').addEventListener('click', () => {
+        submitModal.classList.add('open');
+        nameInput.value = '';
+        charCount.textContent = '0';
+        nameInput.focus();
+    });
+
+    modalCancel.addEventListener('click', () => submitModal.classList.remove('open'));
+
+    submitModal.addEventListener('click', (e) => {
+        if (e.target === submitModal) submitModal.classList.remove('open');
+    });
+
+    nameInput.addEventListener('input', () => {
+        charCount.textContent = nameInput.value.length;
+    });
+
+    nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') modalConfirm.click();
+    });
+
+    modalConfirm.addEventListener('click', () => {
+        const bracketName = nameInput.value.trim() || 'My Bracket';
         const bracketData = buildBracketJSON();
+
+        modalConfirm.disabled = true;
+        modalConfirm.textContent = 'Submitting…';
+
         fetch("/submit_bracket", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ bracket: bracketData })
+            body: JSON.stringify({ bracket: bracketData, bracket_name: bracketName })
         })
         .then(res => res.json())
-        .then(data => alert(data.message || data.error))
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                submitModal.classList.remove('open');
+                window.location.href = '/my_brackets';
+            }
+        })
         .catch(err => {
             console.error("Submit failed:", err);
             alert("Submission failed. Try again.");
+        })
+        .finally(() => {
+            modalConfirm.disabled = false;
+            modalConfirm.textContent = '🏀 Lock It In';
         });
     });
 </script>
