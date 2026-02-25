@@ -142,10 +142,19 @@ body {
     min-height: 0;
 }
 
-.bracket-region-panel:not(.final-four-panel) .round-r64 .matchup { flex: 1; min-height: 0; }
-.bracket-region-panel:not(.final-four-panel) .round-r32 .matchup { flex: 2; min-height: 0; }
-.bracket-region-panel:not(.final-four-panel) .round-s16 .matchup { flex: 4; min-height: 0; }
-.bracket-region-panel:not(.final-four-panel) .round-e8 .matchup  { flex: 8; min-height: 0; }
+.bracket-region-panel:not(.final-four-panel) .round-r64 .matchup,
+.bracket-region-panel:not(.final-four-panel) .round-r32 .matchup,
+.bracket-region-panel:not(.final-four-panel) .round-s16 .matchup,
+.bracket-region-panel:not(.final-four-panel) .round-e8 .matchup {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+}
+.bracket-region-panel:not(.final-four-panel) .round-r64 .matchup { flex: 1; }
+.bracket-region-panel:not(.final-four-panel) .round-r32 .matchup { flex: 2; }
+.bracket-region-panel:not(.final-four-panel) .round-s16 .matchup { flex: 4; }
+.bracket-region-panel:not(.final-four-panel) .round-e8 .matchup  { flex: 8; }
 
 /* =======================
    MATCHUPS
