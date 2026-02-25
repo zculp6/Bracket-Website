@@ -228,15 +228,20 @@ function autofillBracket(data) {
 
     allContainersIds.forEach(containerId => {
         const teams = data[containerId];
-        if (!teams || teams.length === 0) return;
-        
-        // Determine winners for this container
-        const nextIds = roundOrder.filter(([cur]) => cur === containerId).map(([, nxt]) => nxt);
-        const winnerNames = new Set();
-        nextIds.forEach(nextId => {
-            const nextTeams = data[nextId] || [];
-            nextTeams.forEach(t => winnerNames.add(t.name));
-        });
+    if (!teams || teams.length === 0) return;
+
+    // Determine winners for this container
+    const nextIds = roundOrder.filter(([cur]) => cur === containerId).map(([, nxt]) => nxt);
+    const winnerNames = new Set();
+    nextIds.forEach(nextId => {
+        const nextTeams = data[nextId] || [];
+        nextTeams.forEach(t => winnerNames.add(t.name));
+    });
+
+    // Special case: championship winner comes from data.champion
+    if (containerId === "championship" && data.champion) {
+        winnerNames.add(data.champion);
+    }
         const container = document.getElementById(containerId);
         if (!container) return;
         for (let i = 0; i + 1 < teams.length; i += 2) {

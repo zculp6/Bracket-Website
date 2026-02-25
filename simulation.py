@@ -409,8 +409,8 @@ def random_bracket():
 # ---------------------------------------
 # PROBABILISTIC BY SEED
 # ---------------------------------------
-
 def random_probabilistic_bracket():
+    # Load team data and historical counts
     t_df, past = _load_data()
     t_df = _simulate_first_four(t_df, weight=0.5)
 
@@ -418,6 +418,7 @@ def random_probabilistic_bracket():
     regions = ["West", "South", "East", "Midwest"]
     round_id_keys = ["r64", "r32", "s16", "e8"]
 
+    # Prepare teams by region and seed order
     region_teams = {}
     for region in regions:
         r_df = t_df[t_df['Region'] == region].copy()
@@ -431,16 +432,18 @@ def random_probabilistic_bracket():
     result = {}
     region_e8_winners = {}
 
+    # Simulate each region
     for region in regions:
         current_teams = region_teams[region]
-        round_id_map  = REGION_TO_ROUND_ID[region]
+        round_id_map = REGION_TO_ROUND_ID[region]
 
         for round_idx, round_key in enumerate(round_id_keys):
-            container_id   = round_id_map[round_key]
-            round_prob_col = past.columns[round_idx]  # 0-based after dropping "Round of 64"
-            team_entries   = []
-            winners        = []
+            container_id = round_id_map[round_key]
+            round_prob_col = past.columns[round_idx]  # match column like "Round of 64"
+            team_entries = []
+            winners = []
 
+            # Simulate games pairwise
             for i in range(0, len(current_teams), 2):
                 if i + 1 >= len(current_teams):
                     break
@@ -450,36 +453,42 @@ def random_probabilistic_bracket():
                 team_entries.append({"seed": int(t1['Seed']), "name": t1['team_names']})
                 team_entries.append({"seed": int(t2['Seed']), "name": t2['team_names']})
 
+                # Get historical counts
                 try:
-                    p1 = past.loc[past['Seed'] == t1['Seed'], round_prob_col].iloc[0]
-                    p2 = past.loc[past['Seed'] == t2['Seed'], round_prob_col].iloc[0]
+                    count1 = past.loc[past['Seed'] == t1['Seed'], round_prob_col].iloc[0]
+                    count2 = past.loc[past['Seed'] == t2['Seed'], round_prob_col].iloc[0]
+                    # Compute probability based on counts
+                    p_win_t1 = count1 / (count1 + count2) if (count1 + count2) > 0 else 0.5
                 except (IndexError, KeyError):
-                    p1 = p2 = 0.5
+                    p_win_t1 = 0.5
 
-                total = p1 + p2 if (p1 + p2) > 0 else 1
-                winner = t1 if np.random.rand() < (p1 / total) else t2
+                winner = t1 if np.random.rand() < p_win_t1 else t2
                 winners.append(winner)
 
             result[container_id] = team_entries
             current_teams = winners
 
+        # Keep Elite 8 winner for Final Four
         if current_teams:
             region_e8_winners[region] = current_teams[0]
 
+    # Set up Final Four
     ff_left_teams  = [region_e8_winners[r] for r in ["West", "South"]  if r in region_e8_winners]
     ff_right_teams = [region_e8_winners[r] for r in ["East", "Midwest"] if r in region_e8_winners]
 
     result["ff_left"]  = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_left_teams]
     result["ff_right"] = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_right_teams]
 
+    # Final Four games (still random 50/50 for now)
     ff_winners = []
     for ff_teams in [ff_left_teams, ff_right_teams]:
         if len(ff_teams) == 2:
-            t1, t2 = ff_teams[0], ff_teams[1]
+            t1, t2 = ff_teams
             ff_winners.append(t1 if np.random.rand() < 0.5 else t2)
 
+    # Championship game
     if len(ff_winners) == 2:
-        t1, t2 = ff_winners[0], ff_winners[1]
+        t1, t2 = ff_winners
         result["championship"] = [
             {"seed": int(t1['Seed']), "name": t1['team_names']},
             {"seed": int(t2['Seed']), "name": t2['team_names']},
@@ -491,7 +500,6 @@ def random_probabilistic_bracket():
 
     result["champion"] = champion
     return result
-
 
 # ---------------------------------------
 # BY RANKING (deterministic, highest strength wins)
