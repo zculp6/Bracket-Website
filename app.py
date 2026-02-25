@@ -120,7 +120,7 @@ def leaderboard_page():
 def rankings_stats_page():
     # Send the merged data to the frontend
     data_json = rankings_stats.to_dict(orient="records")
-    return render_template("rankings_stats.html", data=data_json)
+    return render_template("ranking_stats.html", data=data_json)
 
 # ---------------------------------------
 # API ENDPOINTS
