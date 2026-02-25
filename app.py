@@ -312,6 +312,10 @@ def get_results():
 def submit_bracket():
     data = request.get_json(force=True)
     bracket_data = data.get("bracket")
+    bracket_name = (data.get("bracket_name") or "My Bracket").strip()
+
+    if  len(bracket_name) > 50:
+        return jsonify({"error": "Bracket name must be 50 characters or fewer"}), 400
 
     if not bracket_data:
         return jsonify({"error": "No bracket data provided"}), 400
@@ -323,7 +327,8 @@ def submit_bracket():
     new_bracket = Bracket(
         user_id=current_user.id,
         entry_number=existing + 1,
-        bracket_data=bracket_data
+        bracket_data=bracket_data,
+        bracket_name = bracket_name or "My Bracket"
     )
 
     db.session.add(new_bracket)
