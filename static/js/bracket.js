@@ -199,15 +199,23 @@ function advanceTeam(matchupElem, teamObj) {
    AUTOFILL BRACKET
    ========================================================= */
 function autofillBracket(data) {
-    const allContainers = [
+    const allContainersIds = [
         "west_r64","west_r32","west_s16","west_e8",
         "south_r64","south_r32","south_s16","south_e8",
         "east_r64","east_r32","east_s16","east_e8",
         "midwest_r64","midwest_r32","midwest_s16","midwest_e8",
         "ff_left","ff_right","championship"
     ];
+    
+    const roundOrder = [
+        ["west_r64","west_r32"], ["west_r32","west_s16"], ["west_s16","west_e8"], ["west_e8","ff_left"],
+        ["south_r64","south_r32"], ["south_r32","south_s16"], ["south_s16","south_e8"], ["south_e8","ff_left"],
+        ["east_r64","east_r32"], ["east_r32","east_s16"], ["east_s16","east_e8"], ["east_e8","ff_right"],
+        ["midwest_r64","midwest_r32"], ["midwest_r32","midwest_s16"], ["midwest_s16","midwest_e8"], ["midwest_e8","ff_right"],
+        ["ff_left","championship"], ["ff_right","championship"]
+    ];
 
-    allContainers.forEach(id => {
+    allContainersIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = "";
     });
@@ -215,16 +223,30 @@ function autofillBracket(data) {
     const champDiv = document.getElementById("champion");
     if (champDiv) champDiv.innerText = "";
 
-    allContainers.forEach(containerId => {
+    allContainersIds.forEach(containerId => {
         const teams = data[containerId];
         if (!teams || teams.length === 0) return;
+        
+        // Determine winners for this container
+        const nextIds = roundOrder.filter(([cur]) => cur === containerId).map(([, nxt]) => nxt);
+        const winnerNames = new Set();
+        nextIds.forEach(nextId => {
+            const nextTeams = data[nextId] || [];
+            nextTeams.forEach(t => winnerNames.add(t.name));
+        });
         const container = document.getElementById(containerId);
         if (!container) return;
         for (let i = 0; i + 1 < teams.length; i += 2) {
+            const t1 = teams[i];
+            const t2 = teams[i + 1];
+            const t1wins = winnerNames.has(t1.name);
+            const t2wins = winnerNames.has(t2.name);
             const div = document.createElement("div");
             div.className = "matchup";
-            div.innerHTML = createTeamRow(teams[i].seed, teams[i].name)
-                          + createTeamRow(teams[i+1].seed, teams[i+1].name);
+            div.innerHTML = createTeamRow(t1.seed, t1.name)
+                          + createTeamRow(t2.seed, t2.name);
+            div.innerHTML = createTeamRow(t1.seed, t1.name, t1wins, !t1wins && t2wins)
+                          + createTeamRow(t2.seed, t2.name, t2wins, !t2wins && t1wins);
             container.appendChild(div);
         }
     });
