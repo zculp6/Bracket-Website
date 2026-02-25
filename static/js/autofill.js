@@ -150,10 +150,6 @@ function submitBracket() {
     .then(data => {
         alert(data.message || 'Bracket submitted successfully!');
     })
-    .catch(err => {
-        console.error('Submission failed:', err);
-        alert('Failed to submit bracket. Please try again.');
-    })
     .finally(() => {
         if (submitBtn) {
             submitBtn.disabled = false;
