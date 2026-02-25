@@ -1,7 +1,7 @@
 /* =========================================================
    TEAM ROW TEMPLATE
    ========================================================= */
-function createTeamRow(seed, name, isSelected, isEliminated) {
+function createTeamRow(seed, name, isSelected = false, isEliminated = false) {
     let cls = "team";
     if (isSelected)   cls += " selected";
     if (isEliminated) cls += " eliminated";
@@ -9,6 +9,36 @@ function createTeamRow(seed, name, isSelected, isEliminated) {
                 <span class="seed">${seed}</span>
                 <span class="team-name">${name}</span>
             </div>`;
+}
+
+/* =========================================================
+   ATTACH CLICK HANDLERS TO UNBOUND TEAMS
+   ========================================================= */
+function attachHandlersToUnbound() {
+    document.querySelectorAll(".team:not([data-bound])").forEach(team => {
+        team.dataset.bound = "true";
+        team.addEventListener("click", function () {
+            const matchup = this.closest(".matchup");
+            if (!matchup) return;
+
+            // Clear previous selections in this matchup
+            matchup.querySelectorAll(".team").forEach(t => {
+                t.classList.remove("selected", "eliminated");
+            });
+
+            // Mark clicked team as selected, others eliminated
+            this.classList.add("selected");
+            matchup.querySelectorAll(".team:not(.selected)").forEach(t => {
+                t.classList.add("eliminated");
+            });
+
+            // Advance the winner
+            advanceTeam(matchup, {
+                seed: this.getAttribute("data-seed"),
+                name: this.getAttribute("data-name")
+            });
+        });
+    });
 }
 
 /* =========================================================
@@ -29,33 +59,7 @@ function loadInitialTeams(teamsData) {
             target.appendChild(div);
         }
     });
-    attachClickHandlers();
-}
-
-/* =========================================================
-   ATTACH CLICK HANDLERS
-   Clones each .team element to prevent stacking listeners.
-   ========================================================= */
-function attachClickHandlers() {
-    document.querySelectorAll(".team").forEach(oldTeam => {
-        const newTeam = oldTeam.cloneNode(true);
-        oldTeam.parentNode.replaceChild(newTeam, oldTeam);
-        newTeam.addEventListener("click", function () {
-            const matchup = this.closest(".matchup");
-            if (!matchup) return;
-            matchup.querySelectorAll(".team").forEach(t => {
-                t.classList.remove("selected", "eliminated");
-            });
-            this.classList.add("selected");
-            matchup.querySelectorAll(".team:not(.selected)").forEach(t => {
-                t.classList.add("eliminated");
-            });
-            advanceTeam(matchup, {
-                seed: this.getAttribute("data-seed"),
-                name: this.getAttribute("data-name")
-            });
-        });
-    });
+    attachHandlersToUnbound();
 }
 
 /* =========================================================
@@ -151,53 +155,21 @@ function advanceTeam(matchupElem, teamObj) {
                            <span class="team-name">${teamObj.name}</span>`;
 
     const existingTeams = targetMatchup.querySelectorAll(":scope > .team");
-
     if (teamSlot === 0) {
-        if (existingTeams[0]) {
-            targetMatchup.replaceChild(newTeamEl, existingTeams[0]);
-        } else {
-            targetMatchup.insertBefore(newTeamEl, targetMatchup.firstChild);
-        }
+        if (existingTeams[0]) targetMatchup.replaceChild(newTeamEl, existingTeams[0]);
+        else targetMatchup.insertBefore(newTeamEl, targetMatchup.firstChild);
     } else {
-        if (existingTeams[1]) {
-            targetMatchup.replaceChild(newTeamEl, existingTeams[1]);
-        } else {
-            targetMatchup.appendChild(newTeamEl);
-        }
+        if (existingTeams[1]) targetMatchup.replaceChild(newTeamEl, existingTeams[1]);
+        else targetMatchup.appendChild(newTeamEl);
     }
 
-    attachClickHandlers();
+    attachHandlersToUnbound(); // attach only to the newly added team
 }
 
 /* =========================================================
-   AUTOFILL BRACKET
-   Populates all rounds from server data and highlights
-   winners (teams that appear in the following round).
+   AUTOFILL BRACKET FROM SERVER DATA
    ========================================================= */
 function autofillBracket(data) {
-    const roundOrder = [
-        ["west_r64",  "west_r32"],
-        ["west_r32",  "west_s16"],
-        ["west_s16",  "west_e8"],
-        ["west_e8",   "ff_left"],
-        ["south_r64", "south_r32"],
-        ["south_r32", "south_s16"],
-        ["south_s16", "south_e8"],
-        ["south_e8",  "ff_left"],
-        ["east_r64",  "east_r32"],
-        ["east_r32",  "east_s16"],
-        ["east_s16",  "east_e8"],
-        ["east_e8",   "ff_right"],
-        ["midwest_r64", "midwest_r32"],
-        ["midwest_r32", "midwest_s16"],
-        ["midwest_s16", "midwest_e8"],
-        ["midwest_e8",  "ff_right"],
-        ["ff_left",     "championship"],
-        ["ff_right",    "championship"],
-        ["championship", "__champion__"],
-    ];
-
-    // Clear everything
     const allContainerIds = [
         "west_r64","west_r32","west_s16","west_e8",
         "south_r64","south_r32","south_s16","south_e8",
@@ -205,6 +177,8 @@ function autofillBracket(data) {
         "midwest_r64","midwest_r32","midwest_s16","midwest_e8",
         "ff_left","ff_right","championship"
     ];
+
+    // Clear everything first
     allContainerIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = "";
@@ -212,68 +186,30 @@ function autofillBracket(data) {
     const champDiv = document.getElementById("champion");
     if (champDiv) champDiv.innerText = "";
 
-    // Build a set of winner names per container for fast lookup.
-    // A team is a "winner" in container X if it appears in the next round's container.
-    // We collect all names that appear in the NEXT container's team list.
-    function getWinnerNames(currentId, nextId) {
-        const winners = new Set();
-        if (nextId === "__champion__") {
-            if (data.champion) winners.add(data.champion);
-            return winners;
-        }
-        const nextTeams = data[nextId] || [];
-        nextTeams.forEach(t => winners.add(t.name));
-        return winners;
-    }
-
-    // Special case: ff_left and ff_right both feed into championship,
-    // but the server splits them. We build winner sets per source container.
-    // For e8→ff: the winner from west_e8 is the first team in ff_left,
-    // winner from south_e8 is the second team in ff_left, etc.
-    // The getWinnerNames approach (any name in the next container) works fine
-    // because each e8 produces only 1 winner and they're distinct teams.
-
-    // Render each container with selected/eliminated classes
+    // Render teams per container
     allContainerIds.forEach(containerId => {
         const teams = data[containerId];
         if (!teams || teams.length === 0) return;
-
         const container = document.getElementById(containerId);
         if (!container) return;
-
-        // Find what the "next" container is for this one
-        // (there may be two entries in roundOrder for the same containerId — e.g. ff_left)
-        const nextIds = roundOrder
-            .filter(([cur]) => cur === containerId)
-            .map(([, nxt]) => nxt);
-
-        // Collect all winner names from all possible next containers
-        const winnerNames = new Set();
-        nextIds.forEach(nextId => {
-            getWinnerNames(containerId, nextId).forEach(n => winnerNames.add(n));
-        });
 
         for (let i = 0; i + 1 < teams.length; i += 2) {
             const t1 = teams[i];
             const t2 = teams[i + 1];
-
-            const t1wins = winnerNames.has(t1.name);
-            const t2wins = winnerNames.has(t2.name);
-
             const div = document.createElement("div");
             div.className = "matchup";
-            div.innerHTML = createTeamRow(t1.seed, t1.name, t1wins, !t1wins && t2wins)
-                          + createTeamRow(t2.seed, t2.name, t2wins, !t2wins && t1wins);
+            div.innerHTML = createTeamRow(t1.seed, t1.name)
+                          + createTeamRow(t2.seed, t2.name);
             container.appendChild(div);
         }
     });
 
-    // Set champion display
+    // Set champion
     if (data.champion && champDiv) {
         champDiv.innerText = data.champion;
     }
 
-    attachClickHandlers();
+    attachHandlersToUnbound();
 }
 
 /* =========================================================
