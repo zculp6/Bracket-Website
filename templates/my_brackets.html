@@ -2,187 +2,144 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Brackets</title>
+    <title>My Brackets | March Madness</title>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bracket.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        body { background: #020b1f; color: #e8eaf0; }
+        /* ── NAV DIVIDER (matches bracket.html) ── */
+        .nav-divider {
+            width: 1px; height: 18px;
+            background: rgba(255,255,255,0.18);
+            margin: 0 2px; flex-shrink: 0;
+        }
+        @media (max-width: 600px) { .nav-divider { display: none; } }
 
-        /* ── PAGE HEADER ── */
-        .page-header {
-            padding: 40px 40px 24px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
-            margin-bottom: 32px;
-        }
-        .page-header h1 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 56px;
-            letter-spacing: 4px;
-            line-height: 1;
-            background: linear-gradient(135deg, #fff 30%, #4d8aff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 0;
-        }
-        .page-header p {
-            color: rgba(255,255,255,0.3);
-            font-family: 'DM Mono', monospace;
-            font-size: 12px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin: 4px 0 0;
-        }
-        .btn-new-bracket {
-            display: inline-block;
-            padding: 10px 22px;
-            background: #0033a0;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 8px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            transition: background 0.15s, transform 0.1s;
-            white-space: nowrap;
-        }
-        .btn-new-bracket:hover { background: #004ae8; transform: translateY(-1px); }
-
-        /* ── EMPTY STATE ── */
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-        }
-        .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
-        .empty-state h3 { font-size: 24px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; margin-bottom: 8px; }
-        .empty-state p { color: rgba(255,255,255,0.35); margin-bottom: 24px; }
-
-        /* ── BRACKET TABS ── */
-        .bracket-tabs {
-            display: flex;
-            gap: 8px;
-            padding: 0 40px 24px;
-            flex-wrap: wrap;
-        }
-        .bracket-tab {
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1.5px solid rgba(255,255,255,0.1);
-            background: none;
-            color: rgba(255,255,255,0.5);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .bracket-tab:hover { border-color: #4d8aff; color: #4d8aff; }
-        .bracket-tab.active { background: #0033a0; border-color: #0033a0; color: #fff; }
-
-        /* ── BRACKET PANEL ── */
-        .bracket-panel { display: none; }
-        .bracket-panel.active { display: block; }
-
-        /* ── BRACKET META BAR ── */
-        .bracket-meta {
+        /* ── CONTROLS BAR — identical to bracket.html ── */
+        .bracket-controls {
             background: #0033a0;
             padding: 12px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
+            border-bottom: 3px solid #001f7a;
+            position: sticky;
+            top: 64px;
+            z-index: 200;
         }
-        .bracket-meta-left h2 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 22px;
-            letter-spacing: 2px;
+        .bracket-controls h1 {
             margin: 0;
+            font-size: 22px;
             color: #fff;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
         }
-        .bracket-meta-left span {
-            font-size: 12px;
-            color: rgba(255,255,255,0.5);
-            font-family: 'DM Mono', monospace;
-            letter-spacing: 1px;
+        .controls-right { display: flex; align-items: center; gap: 10px; }
+
+        /* Bracket switcher tabs sit in the controls bar left side */
+        .bracket-tab {
+            padding: 7px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 7px;
+            color: rgba(255,255,255,0.75);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
         }
+        .bracket-tab:hover { background: rgba(255,255,255,0.18); color: #fff; }
+        .bracket-tab.active { background: #fff; color: #0033a0; border-color: #fff; }
+
+        /* Score pill — matches submit button styling */
         .score-pill {
             background: rgba(240,208,96,0.15);
-            border: 1px solid rgba(240,208,96,0.4);
+            border: 1px solid rgba(240,208,96,0.35);
             border-radius: 20px;
-            padding: 6px 16px;
+            padding: 6px 18px;
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 22px;
-            color: #f0d060;
-            letter-spacing: 2px;
+            font-size: 22px; color: #f0d060; letter-spacing: 2px;
+            white-space: nowrap;
         }
-        .score-pill span {
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            color: rgba(240,208,96,0.5);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-right: 6px;
+        .score-pill small {
+            font-family: 'DM Sans', sans-serif; font-size: 10px;
+            color: rgba(240,208,96,0.5); letter-spacing: 2px;
+            text-transform: uppercase; margin-right: 6px;
         }
 
-        /* ── READ-ONLY BRACKET ── */
-        /* Reuse bracket.css but disable pointer events */
-        .bracket-readonly #bracketContainer {
+        /* Locked badge — mirrors the autofill trigger style */
+        .locked-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.07);
+            border: 1.5px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            font-size: 13px; font-weight: 600;
+            color: rgba(255,255,255,0.45);
+            font-family: 'DM Sans', sans-serif;
+            white-space: nowrap;
+        }
+
+        /* New bracket CTA */
+        .btn-new-bracket {
+            padding: 9px 18px;
+            background: #f0d060;
+            color: #020b1f;
+            font-size: 14px; font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            border: none; border-radius: 8px;
+            text-decoration: none;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .btn-new-bracket:hover { background: #ffe066; }
+
+        /* ── PANEL VISIBILITY ── */
+        .bracket-panel { display: none; }
+        .bracket-panel.active { display: block; }
+
+        /* ── LOCK ALL BRACKET INTERACTIONS ── */
+        .bracket-panel #bracketContainer {
             pointer-events: none;
             user-select: none;
         }
-        .bracket-readonly .team { cursor: default !important; }
-        .bracket-readonly .team:hover { background: inherit !important; }
-        .bracket-readonly .team.selected { background: #0033a0; color: white; }
-        .bracket-readonly .team.eliminated { opacity: 0.45; }
 
-        /* Override bracket.css light background for dark theme */
-        .bracket-readonly .region,
-        .bracket-readonly .final-four,
-        .bracket-readonly .championship,
-        .bracket-readonly .national-champion {
-            background: #0d1a3a;
-            color: #e8eaf0;
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.07);
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 100px 20px; }
+        .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
+        .empty-state h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px; letter-spacing: 2px; margin-bottom: 10px;
         }
-        .bracket-readonly .matchup {
-            background: rgba(255,255,255,0.04);
-            border-color: rgba(255,255,255,0.1);
+        .empty-state p { color: rgba(0,0,0,0.4); margin-bottom: 24px; font-size: 15px; }
+        .empty-state a {
+            display: inline-block; padding: 12px 28px;
+            background: #0033a0; color: #fff; border-radius: 8px;
+            text-decoration: none; font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
         }
-        .bracket-readonly .region-title,
-        .bracket-readonly .final-four h2,
-        .bracket-readonly .championship h2,
-        .bracket-readonly .national-champion h2 {
-            color: #4d8aff;
-        }
-        .bracket-readonly .round h3 { color: rgba(255,255,255,0.3); }
-        .bracket-readonly .team { color: rgba(255,255,255,0.75); }
-        .bracket-readonly .seed { color: rgba(255,255,255,0.4); }
-        .bracket-readonly .champion {
-            border-color: #f0d060;
-            color: #f0d060;
-            background: rgba(240,208,96,0.08);
-        }
-        body { background: #020b1f; }
     </style>
 </head>
 <body>
 
-<!-- ========================= NAV ========================= -->
+<!-- ========================= NAVBAR ========================= -->
 <nav class="site-nav">
     <a href="/" class="nav-logo">🏀 MM Bracket</a>
     <div class="nav-links">
-        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
-        <a href="/bracket"><span class="nav-icon">📋</span><span class="nav-label">My Bracket</span></a>
+        <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
+        {% if current_user.is_authenticated %}
+        <a href="/my_brackets" class="active"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        {% endif %}
+        <span class="nav-divider"></span>
         <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
         <a href="/rankings_stats"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
+        <span class="nav-divider"></span>
         {% if current_user.is_authenticated %}
         <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
         {% else %}
@@ -191,125 +148,115 @@
     </div>
 </nav>
 
-<!-- ========================= HEADER ========================= -->
-<div class="page-header">
-    <div>
-        <h1>My Brackets</h1>
-        <p>{{ current_user.username }} · {{ brackets|length }} of 2 submitted</p>
-    </div>
-    {% if brackets|length < 2 %}
-    <a href="/bracket" class="btn-new-bracket">➕ New Bracket</a>
-    {% endif %}
-</div>
-
 {% if brackets %}
 
-<!-- ── TABS (only shown if >1 bracket) ── -->
-{% if brackets|length > 1 %}
-<div class="bracket-tabs">
-    {% for b in brackets %}
-    <button class="bracket-tab {% if loop.first %}active{% endif %}"
-            data-target="bracket-{{ b.id }}">
-        {{ b.bracket_name }}
-    </button>
-    {% endfor %}
-</div>
-{% endif %}
-
-<!-- ── BRACKET PANELS ── -->
-{% for b in brackets %}
-<div class="bracket-panel bracket-readonly {% if loop.first %}active{% endif %}" id="bracket-{{ b.id }}">
-
-    <!-- Meta bar -->
-    <div class="bracket-meta">
-        <div class="bracket-meta-left">
-            <h2>{{ b.bracket_name }}</h2>
-            <span>Entry {{ b.entry_number }}</span>
+<!-- ========================= CONTROLS BAR ========================= -->
+<div class="bracket-controls">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <h1 id="activeName">{{ brackets[0].bracket_name }}</h1>
+        {% if brackets|length > 1 %}
+        <div style="display:flex;gap:6px;">
+            {% for b in brackets %}
+            <button class="bracket-tab {% if loop.first %}active{% endif %}"
+                    data-id="{{ b.id }}"
+                    data-name="{{ b.bracket_name }}"
+                    data-score="{{ b.score }}">
+                {{ b.bracket_name }}
+            </button>
+            {% endfor %}
         </div>
-        <div class="score-pill"><span>Score</span>{{ b.score }}</div>
+        {% endif %}
+    </div>
+    <div class="controls-right">
+        {% if brackets|length < 2 %}
+        <a href="/bracket" class="btn-new-bracket">➕ New Bracket</a>
+        {% endif %}
+        <span class="locked-badge">🔒 Submitted</span>
+        <div class="score-pill" id="activeScore"><small>Score</small>{{ brackets[0].score }}</div>
+    </div>
+</div>
+
+<!-- ========================= BRACKET PANELS ========================= -->
+{% for b in brackets %}
+<div class="bracket-panel {% if loop.first %}active{% endif %}" id="panel-{{ b.id }}">
+<div id="bracketContainer">
+
+    <div class="side left-side">
+        <div class="region">
+            <h2 class="region-title">West</h2>
+            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="west_r64_{{ b.id }}"></div></div>
+            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="west_r32_{{ b.id }}"></div></div>
+            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="west_s16_{{ b.id }}"></div></div>
+            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="west_e8_{{ b.id }}"></div></div>
+        </div>
+        <div class="region">
+            <h2 class="region-title">South</h2>
+            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="south_r64_{{ b.id }}"></div></div>
+            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="south_r32_{{ b.id }}"></div></div>
+            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="south_s16_{{ b.id }}"></div></div>
+            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="south_e8_{{ b.id }}"></div></div>
+        </div>
     </div>
 
-    <!-- Read-only bracket render -->
-    <div id="bracketContainer-{{ b.id }}">
-
-        <div class="side left-side">
-            <div class="region">
-                <h2 class="region-title">West</h2>
-                <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="west_r64_{{ b.id }}"></div></div>
-                <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="west_r32_{{ b.id }}"></div></div>
-                <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="west_s16_{{ b.id }}"></div></div>
-                <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="west_e8_{{ b.id }}"></div></div>
-            </div>
-            <div class="region">
-                <h2 class="region-title">South</h2>
-                <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="south_r64_{{ b.id }}"></div></div>
-                <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="south_r32_{{ b.id }}"></div></div>
-                <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="south_s16_{{ b.id }}"></div></div>
-                <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="south_e8_{{ b.id }}"></div></div>
-            </div>
+    <div class="final-four-area">
+        <div class="final-four">
+            <h2>Final Four</h2>
+            <div class="matchups" id="ff_left_{{ b.id }}"></div>
+            <div class="matchups" id="ff_right_{{ b.id }}"></div>
         </div>
-
-        <div class="final-four-area">
-            <div class="final-four">
-                <h2>Final Four</h2>
-                <div class="matchups" id="ff_left_{{ b.id }}"></div>
-                <div class="matchups" id="ff_right_{{ b.id }}"></div>
-            </div>
-            <div class="championship">
-                <h2>Championship</h2>
-                <div class="matchups" id="championship_{{ b.id }}"></div>
-            </div>
-            <div class="national-champion">
-                <h2>National Champion</h2>
-                <div class="champion" id="champion_{{ b.id }}">{{ b.bracket_data.get('champion', '') }}</div>
-            </div>
+        <div class="championship">
+            <h2>Championship</h2>
+            <div class="matchups" id="championship_{{ b.id }}"></div>
         </div>
-
-        <div class="side right-side">
-            <div class="region">
-                <h2 class="region-title">East</h2>
-                <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="east_r64_{{ b.id }}"></div></div>
-                <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="east_r32_{{ b.id }}"></div></div>
-                <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="east_s16_{{ b.id }}"></div></div>
-                <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="east_e8_{{ b.id }}"></div></div>
-            </div>
-            <div class="region">
-                <h2 class="region-title">Midwest</h2>
-                <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64_{{ b.id }}"></div></div>
-                <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32_{{ b.id }}"></div></div>
-                <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16_{{ b.id }}"></div></div>
-                <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8_{{ b.id }}"></div></div>
-            </div>
+        <div class="national-champion">
+            <h2>National Champion</h2>
+            <div class="champion" id="champion_{{ b.id }}"></div>
         </div>
+    </div>
 
-    </div><!-- /bracketContainer -->
-</div><!-- /bracket-panel -->
+    <div class="side right-side">
+        <div class="region">
+            <h2 class="region-title">East</h2>
+            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="east_r64_{{ b.id }}"></div></div>
+            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="east_r32_{{ b.id }}"></div></div>
+            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="east_s16_{{ b.id }}"></div></div>
+            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="east_e8_{{ b.id }}"></div></div>
+        </div>
+        <div class="region">
+            <h2 class="region-title">Midwest</h2>
+            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64_{{ b.id }}"></div></div>
+            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32_{{ b.id }}"></div></div>
+            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16_{{ b.id }}"></div></div>
+            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8_{{ b.id }}"></div></div>
+        </div>
+    </div>
+
+</div><!-- /bracketContainer -->
+</div><!-- /panel -->
 {% endfor %}
 
 {% else %}
-
 <div class="empty-state">
     <div class="icon">📋</div>
     <h3>No Brackets Yet</h3>
-    <p>You haven't submitted any brackets. Build one now!</p>
-    <a href="/bracket" class="btn-new-bracket">Build My Bracket →</a>
+    <p>You haven't submitted any brackets yet.</p>
+    <a href="/bracket">⚡ Fill My Bracket</a>
 </div>
-
 {% endif %}
 
 <!-- ========================= JS ========================= -->
-<script src="{{ url_for('static', filename='js/bracket.js') }}"></script>
 <script>
-const initialTeams = {{ teams | tojson }};
-const allBrackets  = {{ brackets | map(attribute='bracket_data') | list | tojson }};
-const bracketIds   = {{ brackets | map(attribute='id') | list | tojson }};
+const allData = {{ brackets | map(attribute='bracket_data') | list | tojson }};
+const allIds  = {{ brackets | map(attribute='id')           | list | tojson }};
 
-/* ── CONTAINER ID REMAPPING ──
-   bracket.js uses IDs like "west_r64". For the view page each bracket
-   gets suffixed IDs like "west_r64_42". We render each bracket by
-   temporarily redirecting getElementById calls via a wrapper.        */
-
-const BASE_CONTAINER_IDS = [
+const ROUND_ORDER = [
+    ["west_r64","west_r32"],["west_r32","west_s16"],["west_s16","west_e8"],["west_e8","ff_left"],
+    ["south_r64","south_r32"],["south_r32","south_s16"],["south_s16","south_e8"],["south_e8","ff_left"],
+    ["east_r64","east_r32"],["east_r32","east_s16"],["east_s16","east_e8"],["east_e8","ff_right"],
+    ["midwest_r64","midwest_r32"],["midwest_r32","midwest_s16"],["midwest_s16","midwest_e8"],["midwest_e8","ff_right"],
+    ["ff_left","championship"],["ff_right","championship"]
+];
+const CONTAINERS = [
     "west_r64","west_r32","west_s16","west_e8",
     "south_r64","south_r32","south_s16","south_e8",
     "east_r64","east_r32","east_s16","east_e8",
@@ -317,84 +264,60 @@ const BASE_CONTAINER_IDS = [
     "ff_left","ff_right","championship"
 ];
 
-const roundOrder = [
-    ["west_r64","west_r32"], ["west_r32","west_s16"], ["west_s16","west_e8"], ["west_e8","ff_left"],
-    ["south_r64","south_r32"], ["south_r32","south_s16"], ["south_s16","south_e8"], ["south_e8","ff_left"],
-    ["east_r64","east_r32"], ["east_r32","east_s16"], ["east_s16","east_e8"], ["east_e8","ff_right"],
-    ["midwest_r64","midwest_r32"], ["midwest_r32","midwest_s16"], ["midwest_s16","midwest_e8"], ["midwest_e8","ff_right"],
-    ["ff_left","championship"], ["ff_right","championship"]
-];
+function renderBracket(data, bid) {
+    CONTAINERS.forEach(cid => {
+        const teams = data[cid];
+        if (!teams || !teams.length) return;
 
-function renderReadOnlyBracket(bracketData, bracketId) {
-    const suffix = `_${bracketId}`;
-
-    // Clear containers
-    BASE_CONTAINER_IDS.forEach(id => {
-        const el = document.getElementById(id + suffix);
-        if (el) el.innerHTML = '';
-    });
-
-    BASE_CONTAINER_IDS.forEach(containerId => {
-        const teams = bracketData[containerId];
-        if (!teams || teams.length === 0) return;
-
-        // Determine which teams advanced (winners) from next-round data
-        const nextIds = roundOrder.filter(([cur]) => cur === containerId).map(([, nxt]) => nxt);
-        const winnerNames = new Set();
-        nextIds.forEach(nextId => {
-            (bracketData[nextId] || []).forEach(t => winnerNames.add(t));
+        /* which names advance out of this round? */
+        const winners = new Set();
+        ROUND_ORDER.filter(([c]) => c === cid).forEach(([, nxt]) => {
+            (data[nxt] || []).forEach(t => winners.add(typeof t === 'string' ? t : t.name));
         });
-        // Championship winner from champion field
-        if (containerId === 'championship' && bracketData.champion) {
-            winnerNames.add(bracketData.champion);
-        }
+        if (cid === 'championship' && data.champion) winners.add(data.champion);
 
-        const container = document.getElementById(containerId + suffix);
+        const container = document.getElementById(cid + '_' + bid);
         if (!container) return;
+        container.innerHTML = '';
 
         for (let i = 0; i + 1 < teams.length; i += 2) {
-            const t1 = teams[i];
-            const t2 = teams[i + 1];
-
-            // teams can be strings (winner picks) or objects {seed, name}
-            const name1 = typeof t1 === 'string' ? t1 : t1.name;
-            const seed1 = typeof t1 === 'string' ? '' : t1.seed;
-            const name2 = typeof t2 === 'string' ? t2 : t2.name;
-            const seed2 = typeof t2 === 'string' ? '' : t2.seed;
-
-            const t1wins = winnerNames.has(name1);
-            const t2wins = winnerNames.has(name2);
+            const t1 = teams[i], t2 = teams[i + 1];
+            const n1 = typeof t1 === 'string' ? t1 : t1.name;
+            const s1 = typeof t1 === 'string' ? '' : (t1.seed || '');
+            const n2 = typeof t2 === 'string' ? t2 : t2.name;
+            const s2 = typeof t2 === 'string' ? '' : (t2.seed || '');
+            const w1 = winners.has(n1), w2 = winners.has(n2);
 
             const div = document.createElement('div');
             div.className = 'matchup';
             div.innerHTML =
-                `<div class="team ${t1wins ? 'selected' : (t2wins ? 'eliminated' : '')}">
-                    <span class="seed">${seed1}</span>
-                    <span class="team-name">${name1}</span>
-                 </div>` +
-                `<div class="team ${t2wins ? 'selected' : (t1wins ? 'eliminated' : '')}">
-                    <span class="seed">${seed2}</span>
-                    <span class="team-name">${name2}</span>
-                 </div>`;
+                `<div class="team ${w1 ? 'selected' : w2 ? 'eliminated' : ''}">
+                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>
+                </div>` +
+                `<div class="team ${w2 ? 'selected' : w1 ? 'eliminated' : ''}">
+                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>
+                </div>`;
             container.appendChild(div);
         }
     });
+
+    const ch = document.getElementById('champion_' + bid);
+    if (ch && data.champion) ch.innerText = data.champion;
 }
 
-// Render all brackets on load
 document.addEventListener('DOMContentLoaded', () => {
-    allBrackets.forEach((data, i) => {
-        renderReadOnlyBracket(data, bracketIds[i]);
-    });
+    allData.forEach((d, i) => renderBracket(d, allIds[i]));
 });
 
-/* ── TAB SWITCHING ── */
-document.querySelectorAll('.bracket-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.bracket-tab').forEach(t => t.classList.remove('active'));
+/* Tab switching */
+document.querySelectorAll('.bracket-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.bracket-tab').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.bracket-panel').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.target).classList.add('active');
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.id).classList.add('active');
+        document.getElementById('activeName').textContent = btn.dataset.name;
+        document.getElementById('activeScore').innerHTML = `<small>Score</small>${btn.dataset.score}`;
     });
 });
 </script>

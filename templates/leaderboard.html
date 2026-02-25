@@ -17,7 +17,7 @@
             min-height: 100vh;
         }
 
-        /* Override site-nav for dark theme */
+        /* ── NAV OVERRIDES ── */
         .site-nav {
             background: rgba(2,11,31,0.95) !important;
             backdrop-filter: blur(10px);
@@ -26,314 +26,233 @@
         }
         .site-nav .nav-logo {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 24px;
-            letter-spacing: 3px;
-            color: #4d8aff !important;
+            font-size: 24px; letter-spacing: 3px; color: #4d8aff !important;
         }
+        .nav-divider {
+            width: 1px; height: 18px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 2px; flex-shrink: 0;
+        }
+        @media (max-width: 600px) { .nav-divider { display: none; } }
 
-        /* HEADER */
+        /* ── PAGE HEADER ── */
         .page-header {
             text-align: center;
             padding: 70px 20px 50px;
             border-bottom: 1px solid rgba(255,255,255,0.06);
         }
-
         .page-header h1 {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 80px;
-            letter-spacing: 5px;
+            font-size: 80px; letter-spacing: 5px;
             background: linear-gradient(135deg, #4d8aff, #fff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 10px;
         }
+        .page-header p { color: rgba(255,255,255,0.4); font-size: 15px; letter-spacing: 1px; }
 
-        .page-header p {
-            color: rgba(255,255,255,0.4);
-            font-size: 15px;
-            letter-spacing: 1px;
-        }
-
-        /* PODIUM (top 3) */
+        /* ── PODIUM ── */
         .podium {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            gap: 16px;
-            max-width: 700px;
-            margin: 60px auto 50px;
-            padding: 0 20px;
+            display: flex; justify-content: center; align-items: flex-end;
+            gap: 16px; max-width: 700px;
+            margin: 60px auto 50px; padding: 0 20px;
         }
-
-        .podium-slot {
-            flex: 1;
-            text-align: center;
-            position: relative;
-        }
-
-        .podium-slot.first { order: 2; }
+        .podium-slot { flex: 1; text-align: center; }
+        .podium-slot.first  { order: 2; }
         .podium-slot.second { order: 1; }
-        .podium-slot.third { order: 3; }
+        .podium-slot.third  { order: 3; }
+
+        /* Make entire podium slot clickable */
+        .podium-slot a { display: block; text-decoration: none; color: inherit; }
+        .podium-slot a:hover .podium-avatar { transform: scale(1.06); filter: brightness(1.15); }
 
         .podium-avatar {
-            width: 54px;
-            height: 54px;
-            border-radius: 50%;
+            width: 54px; height: 54px; border-radius: 50%;
             margin: 0 auto 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 22px;
-            background: #0033a0;
-            border: 2px solid rgba(255,255,255,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+            background: #0033a0; border: 2px solid rgba(255,255,255,0.15);
+            transition: transform 0.15s, filter 0.15s;
         }
-
         .podium-slot.first .podium-avatar {
-            width: 64px;
-            height: 64px;
-            font-size: 28px;
+            width: 64px; height: 64px; font-size: 28px;
             background: linear-gradient(135deg, #c9a227, #f0d060);
-            color: #020b1f;
-            border-color: #f0d060;
+            color: #020b1f; border-color: #f0d060;
             box-shadow: 0 0 24px rgba(240,208,96,0.4);
         }
-
-        .podium-crown {
-            font-size: 20px;
-            display: block;
-            margin-bottom: 4px;
+        .podium-crown { font-size: 20px; display: block; margin-bottom: 4px; }
+        .podium-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+        .podium-bracket-name {
+            font-size: 11px; color: rgba(255,255,255,0.4);
+            font-style: italic; margin-bottom: 4px;
         }
-
-        .podium-name {
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
         .podium-score {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 22px;
-            color: #4d8aff;
-            margin-bottom: 8px;
+            font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+            color: #4d8aff; margin-bottom: 8px;
         }
         .podium-slot.first .podium-score { color: #f0d060; font-size: 28px; }
-
         .podium-block {
             border-radius: 8px 8px 0 0;
             background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-bottom: none;
+            border: 1px solid rgba(255,255,255,0.08); border-bottom: none;
         }
-
         .podium-slot.first  .podium-block { height: 90px; background: rgba(240,208,96,0.06); border-color: rgba(240,208,96,0.2); }
         .podium-slot.second .podium-block { height: 65px; }
         .podium-slot.third  .podium-block { height: 45px; }
-
         .podium-rank {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 28px;
-            color: rgba(255,255,255,0.15);
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
+            font-family: 'Bebas Neue', sans-serif; font-size: 28px;
+            color: rgba(255,255,255,0.15); line-height: 1;
+            display: flex; align-items: center; justify-content: center; height: 100%;
         }
         .podium-slot.first .podium-rank { font-size: 36px; color: rgba(240,208,96,0.3); }
 
-        /* TABLE */
+        /* ── TABLE ── */
         .leaderboard-wrap {
-            max-width: 860px;
-            margin: 0 auto 80px;
-            padding: 0 20px;
+            max-width: 860px; margin: 0 auto 80px; padding: 0 20px;
         }
-
-        .leaderboard-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
+        .leaderboard-table { width: 100%; border-collapse: collapse; }
         .leaderboard-table thead tr {
             border-bottom: 1px solid rgba(255,255,255,0.08);
         }
-
         .leaderboard-table thead th {
-            text-align: left;
-            font-size: 11px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.3);
-            padding: 12px 16px;
-            font-weight: 500;
+            text-align: left; font-size: 11px; letter-spacing: 2px;
+            text-transform: uppercase; color: rgba(255,255,255,0.3);
+            padding: 12px 16px; font-weight: 500;
         }
-
         .leaderboard-table thead th.right { text-align: right; }
 
+        /* Clickable rows */
         .leaderboard-table tbody tr {
             border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: background 0.15s;
+            cursor: pointer;
+            transition: background 0.12s;
         }
-
-        .leaderboard-table tbody tr:hover {
-            background: rgba(255,255,255,0.03);
-        }
-
-        .leaderboard-table tbody td {
-            padding: 16px;
-            font-size: 15px;
-        }
+        .leaderboard-table tbody tr:hover { background: rgba(77,138,255,0.08); }
+        .leaderboard-table tbody tr:hover .view-hint { opacity: 1; }
+        .leaderboard-table tbody td { padding: 14px 16px; font-size: 15px; }
 
         .rank-cell {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 22px;
-            color: rgba(255,255,255,0.2);
-            width: 50px;
+            font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+            color: rgba(255,255,255,0.2); width: 50px;
         }
 
-        .user-cell {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
+        .user-cell { display: flex; align-items: center; gap: 12px; }
         .user-avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: #0033a0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 16px;
-            flex-shrink: 0;
+            width: 38px; height: 38px; border-radius: 50%; background: #0033a0;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Bebas Neue', sans-serif; font-size: 16px; flex-shrink: 0;
         }
-
-        .user-name {
-            font-weight: 700;
-            font-size: 15px;
+        .user-name { font-weight: 700; font-size: 15px; }
+        .bracket-name-row {
+            font-size: 13px; color: #4d8aff;
+            font-style: italic; margin-top: 1px;
         }
-
-        .entry-badge {
-            font-size: 11px;
-            color: rgba(255,255,255,0.35);
-            margin-top: 2px;
-        }
+        .entry-badge { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 1px; }
 
         .score-cell {
             text-align: right;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 26px;
-            color: #4d8aff;
+            font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: #4d8aff;
         }
-
         .score-bar-cell { width: 160px; }
-
         .score-bar-track {
-            height: 4px;
-            background: rgba(255,255,255,0.07);
-            border-radius: 2px;
-            overflow: hidden;
+            height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden;
         }
-
         .score-bar-fill {
             height: 100%;
             background: linear-gradient(90deg, #0033a0, #4d8aff);
             border-radius: 2px;
-            transition: width 0.6s ease;
         }
 
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-            color: rgba(255,255,255,0.3);
+        .view-hint {
+            font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+            color: rgba(77,138,255,0.6); opacity: 0;
+            transition: opacity 0.15s; white-space: nowrap;
         }
 
-        .empty-state .icon {
-            font-size: 56px;
-            margin-bottom: 20px;
-        }
-
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 80px 20px; color: rgba(255,255,255,0.3); }
+        .empty-state .icon { font-size: 56px; margin-bottom: 20px; }
         .empty-state h3 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 32px;
-            letter-spacing: 2px;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 10px;
+            font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+            letter-spacing: 2px; color: rgba(255,255,255,0.5); margin-bottom: 10px;
         }
 
         @media (max-width: 640px) {
             .page-header h1 { font-size: 52px; }
-            .score-bar-cell { display: none; }
+            .score-bar-cell, .view-hint { display: none; }
             .podium { gap: 8px; }
         }
     </style>
 </head>
 <body>
 
-<!-- ========================= NAV ========================= -->
+<!-- ========================= NAVBAR ========================= -->
 <nav class="site-nav">
     <a href="/" class="nav-logo">🏀 MM Bracket</a>
     <div class="nav-links">
-        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
-        <a href="/bracket"><span class="nav-icon">📋</span><span class="nav-label">My Bracket</span></a>
-        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+        <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
+        {% if current_user.is_authenticated %}
+        <a href="/my_brackets"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        {% endif %}
+        <span class="nav-divider"></span>
+        <a href="/leaderboard" class="active"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
         <a href="/rankings_stats"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
+        <span class="nav-divider"></span>
         {% if current_user.is_authenticated %}
         <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
         {% else %}
         <a href="/login"><span class="nav-icon">🔑</span><span class="nav-label">Login</span></a>
+        <a href="/register" class="btn-accent"><span class="nav-icon">✨</span><span class="nav-label">Register</span></a>
         {% endif %}
     </div>
 </nav>
 
+<!-- ========================= HEADER ========================= -->
 <div class="page-header">
     <h1>Leaderboard</h1>
     <p>Updated after each game</p>
 </div>
 
-{% set top_brackets = brackets[:3] %}
-{% set rest_brackets = brackets[3:] %}
-
 {% if brackets %}
 
-<!-- PODIUM for top 3 -->
+<!-- ========================= PODIUM (top 3) ========================= -->
 {% if brackets|length >= 3 %}
 <div class="podium">
-    <!-- 2nd Place -->
+
     <div class="podium-slot second">
-        <div class="podium-avatar">{{ brackets[1].user.username[0]|upper }}</div>
-        <div class="podium-name">{{ brackets[1].user.username }}</div>
-        <div class="podium-score">{{ brackets[1].score }}</div>
-        <div class="podium-block"><div class="podium-rank">2</div></div>
+        <a href="/bracket/{{ brackets[1].id }}">
+            <div class="podium-avatar">{{ brackets[1].user.username[0]|upper }}</div>
+            <div class="podium-name">{{ brackets[1].user.username }}</div>
+            <div class="podium-bracket-name">{{ brackets[1].bracket_name }}</div>
+            <div class="podium-score">{{ brackets[1].score }}</div>
+            <div class="podium-block"><div class="podium-rank">2</div></div>
+        </a>
     </div>
 
-    <!-- 1st Place -->
     <div class="podium-slot first">
-        <span class="podium-crown">👑</span>
-        <div class="podium-avatar">{{ brackets[0].user.username[0]|upper }}</div>
-        <div class="podium-name">{{ brackets[0].user.username }}</div>
-        <div class="podium-score">{{ brackets[0].score }}</div>
-        <div class="podium-block"><div class="podium-rank">1</div></div>
+        <a href="/bracket/{{ brackets[0].id }}">
+            <span class="podium-crown">👑</span>
+            <div class="podium-avatar">{{ brackets[0].user.username[0]|upper }}</div>
+            <div class="podium-name">{{ brackets[0].user.username }}</div>
+            <div class="podium-bracket-name">{{ brackets[0].bracket_name }}</div>
+            <div class="podium-score">{{ brackets[0].score }}</div>
+            <div class="podium-block"><div class="podium-rank">1</div></div>
+        </a>
     </div>
 
-    <!-- 3rd Place -->
     <div class="podium-slot third">
-        <div class="podium-avatar">{{ brackets[2].user.username[0]|upper }}</div>
-        <div class="podium-name">{{ brackets[2].user.username }}</div>
-        <div class="podium-score">{{ brackets[2].score }}</div>
-        <div class="podium-block"><div class="podium-rank">3</div></div>
+        <a href="/bracket/{{ brackets[2].id }}">
+            <div class="podium-avatar">{{ brackets[2].user.username[0]|upper }}</div>
+            <div class="podium-name">{{ brackets[2].user.username }}</div>
+            <div class="podium-bracket-name">{{ brackets[2].bracket_name }}</div>
+            <div class="podium-score">{{ brackets[2].score }}</div>
+            <div class="podium-block"><div class="podium-rank">3</div></div>
+        </a>
     </div>
+
 </div>
 {% endif %}
 
-<!-- FULL TABLE -->
+<!-- ========================= FULL TABLE ========================= -->
 <div class="leaderboard-wrap">
     <table class="leaderboard-table">
         <thead>
@@ -342,18 +261,20 @@
                 <th>Player</th>
                 <th class="right">Points</th>
                 <th class="score-bar-cell"></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             {% set max_score = brackets[0].score if brackets[0].score > 0 else 1 %}
             {% for b in brackets %}
-            <tr>
+            <tr onclick="window.location='/bracket/{{ b.id }}'">
                 <td class="rank-cell">{{ loop.index }}</td>
                 <td>
                     <div class="user-cell">
                         <div class="user-avatar">{{ b.user.username[0]|upper }}</div>
                         <div>
                             <div class="user-name">{{ b.user.username }}</div>
+                            <div class="bracket-name-row">{{ b.bracket_name }}</div>
                             <div class="entry-badge">Entry {{ b.entry_number }}</div>
                         </div>
                     </div>
@@ -361,9 +282,10 @@
                 <td class="score-cell">{{ b.score }}</td>
                 <td class="score-bar-cell">
                     <div class="score-bar-track">
-                        <div class="score-bar-fill" style="width: {{ (b.score / max_score * 100)|int }}%"></div>
+                        <div class="score-bar-fill" style="width:{{ (b.score / max_score * 100)|int }}%"></div>
                     </div>
                 </td>
+                <td class="view-hint">View picks →</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -371,13 +293,11 @@
 </div>
 
 {% else %}
-
 <div class="empty-state">
     <div class="icon">🏀</div>
     <h3>No Brackets Yet</h3>
     <p>Be the first to submit and claim the top spot.</p>
 </div>
-
 {% endif %}
 
 </body>
