@@ -1,294 +1,253 @@
-/* =========================================================
-   TEAM ROW TEMPLATE
-   ========================================================= */
-function createTeamRow(seed, name, isSelected = false, isEliminated = false) {
-    let classes = "team";
-    if (isSelected)   classes += " selected";
-    if (isEliminated) classes += " eliminated";
-    return `<div class="${classes}" data-seed="${seed}" data-name="${name}">
-                <span class="seed">${seed}</span>
-                <span class="team-name">${name}</span>
-            </div>`;
+/* =======================
+   GLOBAL LAYOUT
+   =======================*/
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #f7f7f7;
 }
 
-/* =========================================================
-   LOAD INITIAL ROUND OF 64 TEAMS
-   ========================================================= */
-function loadInitialTeams(teamsData) {
-    console.log("Loading initial bracket teams...");
-    ["west", "south", "east", "midwest"].forEach(region => {
-        const teams  = teamsData[region] || [];
-        const target = document.getElementById(`${region}_r64`);
-        if (!target) { console.warn("Missing:", `${region}_r64`); return; }
-        target.innerHTML = "";
-        for (let i = 0; i + 1 < teams.length; i += 2) {
-            const div = document.createElement("div");
-            div.className = "matchup";
-            div.innerHTML = createTeamRow(teams[i].seed, teams[i].name)
-                          + createTeamRow(teams[i+1].seed, teams[i+1].name);
-            target.appendChild(div);
-        }
-    });
-    attachClickHandlers();
+.top-bar {
+    background: #0033a0;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* =========================================================
-   ATTACH CLICK HANDLERS
-   Clones each .team element to prevent stacking listeners.
-   ========================================================= */
-function attachClickHandlers() {
-    document.querySelectorAll(".team").forEach(oldTeam => {
-        const newTeam = oldTeam.cloneNode(true);
-        oldTeam.parentNode.replaceChild(newTeam, oldTeam);
-        newTeam.addEventListener("click", function () {
-            const matchup = this.closest(".matchup");
-            if (!matchup) return;
-            matchup.querySelectorAll(".team").forEach(t => {
-                t.classList.remove("selected", "eliminated");
-            });
-            this.classList.add("selected");
-            matchup.querySelectorAll(".team:not(.selected)").forEach(t => {
-                t.classList.add("eliminated");
-            });
-            advanceTeam(matchup, {
-                seed: this.getAttribute("data-seed"),
-                name: this.getAttribute("data-name")
-            });
-        });
-    });
+.top-bar h1 { margin: 0; font-size: 28px; }
+.controls select, .controls button { padding: 8px 12px; margin-left: 10px; font-size: 14px; }
+
+#bracketContainer {
+    padding: 20px;
+    max-width: 100%;
+    overflow-x: auto;
 }
 
-/* =========================================================
-   NAVIGATION HELPERS
-   ========================================================= */
-function getContainerId(matchupElem) {
-    const c = matchupElem.closest(".matchups");
-    return c ? c.id : null;
+/* =======================
+   REGION TABS (South, East, West, Midwest, Final Four)
+   =======================*/
+
+.bracket-region-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    padding: 0 4px;
 }
 
-function getRegion(matchupElem) {
-    const id = getContainerId(matchupElem);
-    return id ? id.split("_")[0] : null;
+.bracket-region-tab {
+    padding: 10px 20px;
+    background: rgba(0,51,160,0.15);
+    border: 1.5px solid rgba(0,51,160,0.3);
+    border-radius: 8px;
+    color: #0033a0;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-function getRound(matchupElem) {
-    const id = getContainerId(matchupElem);
-    if (!id) return null;
-    const parts = id.split("_");
-    return parts.length >= 2 ? parts.slice(1).join("_") : id;
+.bracket-region-tab:hover {
+    background: rgba(0,51,160,0.25);
+    border-color: #0033a0;
 }
 
-/*
- * Returns { nextContainerId, slotIndex, teamSlot }
- *
- * slotIndex = which .matchup div inside the next container
- * teamSlot  = 0 (top/first team) or 1 (bottom/second team)
- *
- * KEY LOGIC FOR FINAL FOUR:
- *   ff_left  holds TWO matchups: slot 0 = West winner, slot 1 = South winner
- *   ff_right holds TWO matchups: slot 0 = East winner, slot 1 = Midwest winner
- *   Then ff_left's ONE game winner + ff_right's ONE game winner → championship
- *
- *   Wait — that's wrong for a real bracket. The correct structure is:
- *   ff_left  = ONE matchup: West winner (top) vs South winner (bottom)
- *   ff_right = ONE matchup: East winner (top) vs Midwest winner (bottom)
- *   championship = ONE matchup: ff_left winner (top) vs ff_right winner (bottom)
- *
- *   So West  → ff_left  slotIndex=0, teamSlot=0
- *      South → ff_left  slotIndex=0, teamSlot=1
- *      East  → ff_right slotIndex=0, teamSlot=0
- *      Midwest→ ff_right slotIndex=0, teamSlot=1
- */
-function getNextSlot(matchupElem) {
-    const containerId = getContainerId(matchupElem);
-    const region      = getRegion(matchupElem);
-    const round       = getRound(matchupElem);
-
-    const container   = matchupElem.closest(".matchups");
-    const allMatchups = Array.from(container.querySelectorAll(":scope > .matchup"));
-    const matchupIdx  = allMatchups.indexOf(matchupElem);
-
-    const regionRounds = ["r64", "r32", "s16", "e8"];
-    const roundIdx     = regionRounds.indexOf(round);
-
-    // Inside a region: pairs of matchups collapse into one next-round matchup
-    if (roundIdx !== -1 && roundIdx < regionRounds.length - 1) {
-        return {
-            nextContainerId: `${region}_${regionRounds[roundIdx + 1]}`,
-            slotIndex:       Math.floor(matchupIdx / 2),
-            teamSlot:        matchupIdx % 2
-        };
-    }
-
-    // Elite 8 → Final Four (one matchup per ff container)
-    if (round === "e8") {
-        if (region === "west")    return { nextContainerId: "ff_left",  slotIndex: 0, teamSlot: 0 };
-        if (region === "south")   return { nextContainerId: "ff_left",  slotIndex: 0, teamSlot: 1 };
-        if (region === "east")    return { nextContainerId: "ff_right", slotIndex: 0, teamSlot: 0 };
-        if (region === "midwest") return { nextContainerId: "ff_right", slotIndex: 0, teamSlot: 1 };
-    }
-
-    // Final Four → Championship
-    if (round === "left")  return { nextContainerId: "championship", slotIndex: 0, teamSlot: 0 };
-    if (round === "right") return { nextContainerId: "championship", slotIndex: 0, teamSlot: 1 };
-
-    // Championship → Champion display
-    if (containerId === "championship") {
-        return { nextContainerId: "champion_display", slotIndex: 0, teamSlot: 0 };
-    }
-
-    return null;
+.bracket-region-tab.active {
+    background: #0033a0;
+    color: white;
+    border-color: #0033a0;
 }
 
-/* =========================================================
-   ADVANCE WINNER TO NEXT ROUND
-   ========================================================= */
-function advanceTeam(matchupElem, teamObj) {
-    const next = getNextSlot(matchupElem);
-    if (!next) return;
+/* =======================
+   BRACKET PANELS (one per tab)
+   =======================*/
 
-    const { nextContainerId, slotIndex, teamSlot } = next;
-
-    // Champion display is a plain div, not a .matchups container
-    if (nextContainerId === "champion_display") {
-        const el = document.getElementById("champion");
-        if (el) el.innerText = `${teamObj.seed} ${teamObj.name}`;
-        return;
-    }
-
-    const nextContainer = document.getElementById(nextContainerId);
-    if (!nextContainer) { console.warn("Missing container:", nextContainerId); return; }
-
-    // Ensure enough matchup divs exist in the next container
-    let matchups = nextContainer.querySelectorAll(":scope > .matchup");
-    while (matchups.length <= slotIndex) {
-        const div = document.createElement("div");
-        div.className = "matchup";
-        nextContainer.appendChild(div);
-        matchups = nextContainer.querySelectorAll(":scope > .matchup");
-    }
-
-    const targetMatchup = matchups[slotIndex];
-
-    // Build new team element
-    const newTeamEl = document.createElement("div");
-    newTeamEl.className = "team";
-    newTeamEl.setAttribute("data-seed", teamObj.seed);
-    newTeamEl.setAttribute("data-name", teamObj.name);
-    newTeamEl.innerHTML = `<span class="seed">${teamObj.seed}</span>
-                           <span class="team-name">${teamObj.name}</span>`;
-
-    // Place in the correct slot (0=top, 1=bottom), replacing if already filled
-    const existingTeams = targetMatchup.querySelectorAll(":scope > .team");
-
-    if (teamSlot === 0) {
-        if (existingTeams[0]) {
-            targetMatchup.replaceChild(newTeamEl, existingTeams[0]);
-        } else {
-            targetMatchup.insertBefore(newTeamEl, targetMatchup.firstChild);
-        }
-    } else {
-        if (existingTeams[1]) {
-            targetMatchup.replaceChild(newTeamEl, existingTeams[1]);
-        } else {
-            targetMatchup.appendChild(newTeamEl);
-        }
-    }
-
-    attachClickHandlers();
+.bracket-region-panel {
+    display: none;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 24px;
 }
 
-/* =========================================================
-   AUTOFILL BRACKET
-   ========================================================= */
-function autofillBracket(data) {
-    const allContainersIds = [
-        "west_r64","west_r32","west_s16","west_e8",
-        "south_r64","south_r32","south_s16","south_e8",
-        "east_r64","east_r32","east_s16","east_e8",
-        "midwest_r64","midwest_r32","midwest_s16","midwest_e8",
-        "ff_left","ff_right","championship"
-    ];
-    
-    const roundOrder = [
-        ["west_r64","west_r32"], ["west_r32","west_s16"], ["west_s16","west_e8"], ["west_e8","ff_left"],
-        ["south_r64","south_r32"], ["south_r32","south_s16"], ["south_s16","south_e8"], ["south_e8","ff_left"],
-        ["east_r64","east_r32"], ["east_r32","east_s16"], ["east_s16","east_e8"], ["east_e8","ff_right"],
-        ["midwest_r64","midwest_r32"], ["midwest_r32","midwest_s16"], ["midwest_s16","midwest_e8"], ["midwest_e8","ff_right"],
-        ["ff_left","championship"], ["ff_right","championship"]
-    ];
-
-    allContainersIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = "";
-    });
-
-    const champDiv = document.getElementById("champion");
-    if (champDiv) champDiv.innerText = "";
-
-    allContainersIds.forEach(containerId => {
-        const teams = data[containerId];
-    if (!teams || teams.length === 0) return;
-
-    // Determine winners for this container
-    const nextIds = roundOrder.filter(([cur]) => cur === containerId).map(([, nxt]) => nxt);
-    const winnerNames = new Set();
-    nextIds.forEach(nextId => {
-        const nextTeams = data[nextId] || [];
-        nextTeams.forEach(t => winnerNames.add(t.name));
-    });
-
-    // Special case: championship winner comes from data.champion
-    if (containerId === "championship" && data.champion) {
-        winnerNames.add(data.champion);
-    }
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        for (let i = 0; i + 1 < teams.length; i += 2) {
-            const t1 = teams[i];
-            const t2 = teams[i + 1];
-            const t1wins = winnerNames.has(t1.name);
-            const t2wins = winnerNames.has(t2.name);
-            const div = document.createElement("div");
-            div.className = "matchup";
-            div.innerHTML = createTeamRow(t1.seed, t1.name)
-                          + createTeamRow(t2.seed, t2.name);
-            div.innerHTML = createTeamRow(t1.seed, t1.name, t1wins, !t1wins && t2wins)
-                          + createTeamRow(t2.seed, t2.name, t2wins, !t2wins && t1wins);
-            container.appendChild(div);
-        }
-    });
-
-    if (data.champion && champDiv) champDiv.innerText = data.champion;
-
-    attachClickHandlers();
+.bracket-region-panel.active {
+    display: block;
 }
 
-/* =========================================================
-   BUILD JSON FOR SUBMISSION
-   Saves full matchup pairs (both teams) for correct display when viewing brackets.
-   ========================================================= */
-function buildBracketJSON() {
-    const result = {};
-    document.querySelectorAll(".matchups").forEach(roundElem => {
-        const id = roundElem.id;
-        if (!id) return;
-        const pairs = [];
-        roundElem.querySelectorAll(".matchup").forEach(m => {
-            const teams = m.querySelectorAll(".team");
-            const t1 = teams[0], t2 = teams[1];
-            if (t1 && t2) {
-                pairs.push(
-                    { seed: t1.getAttribute("data-seed") || "", name: t1.getAttribute("data-name") || "" },
-                    { seed: t2.getAttribute("data-seed") || "", name: t2.getAttribute("data-name") || "" }
-                );
-            }
-        });
-        result[id] = pairs;
-    });
-    const champDiv = document.getElementById("champion");
-    result["champion"] = champDiv ? champDiv.innerText.trim() : null;
-    return result;
+/* =======================
+   ESPN-STYLE COLUMNS
+   Rounds flow left-to-right, matchups align in tree structure
+   =======================*/
+
+.bracket-columns {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    min-height: 520px;
 }
 
-console.log("Bracket JS loaded.");
+.bracket-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 140px;
+    padding: 0 12px;
+    position: relative;
+}
+
+.bracket-column:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(0,51,160,0.2) 5%,
+        rgba(0,51,160,0.2) 95%,
+        transparent 100%);
+}
+
+.bracket-column h3 {
+    margin: 0 0 12px 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #666;
+}
+
+/* ESPN-style: flex columns with space-between for bracket tree flow */
+
+.bracket-region-panel:not(.final-four-panel) .bracket-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.bracket-region-panel:not(.final-four-panel) .round-r64 .matchups,
+.bracket-region-panel:not(.final-four-panel) .round-r32 .matchups,
+.bracket-region-panel:not(.final-four-panel) .round-s16 .matchups,
+.bracket-region-panel:not(.final-four-panel) .round-e8 .matchups {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+}
+
+/* =======================
+   MATCHUPS
+   =======================*/
+
+.matchups {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.matchup {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    overflow: hidden;
+    min-width: 120px;
+}
+
+/* =======================
+   TEAM ROWS
+   =======================*/
+
+.team {
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 0;
+}
+
+.team:hover { background: #e5e9ff; }
+
+.team.selected {
+    background: #0033a0;
+    color: white !important;
+}
+
+.team.eliminated { opacity: 0.6; }
+
+.team.correct { border-left: 4px solid #22c55e; }
+.team.correct .check-mark { margin-left: 6px; color: #22c55e; }
+
+.team.incorrect-actual {
+    background: rgba(220, 38, 38, 0.2) !important;
+    border-left: 4px solid #dc2626;
+}
+.team.incorrect-actual .team-name { color: #dc2626 !important; }
+
+.seed { font-weight: bold; margin-right: 6px; }
+.team-name { font-size: 13px; }
+
+/* =======================
+   FINAL FOUR TAB
+   Different layout: 3 columns (FF Left, FF Right, Championship)
+   =======================*/
+
+.bracket-region-panel.final-four-panel .bracket-columns {
+    min-height: 280px;
+}
+
+.bracket-region-panel.final-four-panel .bracket-column {
+    min-width: 160px;
+}
+
+.bracket-region-panel.final-four-panel .bracket-column.round-ff {
+    flex: 1;
+}
+
+.bracket-region-panel.final-four-panel .bracket-column.round-champ {
+    flex: 1;
+    justify-content: center;
+}
+
+.champion {
+    padding: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0033a0;
+    border: 2px solid #0033a0;
+    border-radius: 8px;
+    min-height: 40px;
+    margin-top: 16px;
+}
+
+/* =======================
+   LEGACY: region blocks (for backward compat in some views)
+   =======================*/
+
+.region {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+}
+
+.region-title {
+    margin-top: 0;
+    text-align: center;
+    color: #0033a0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.round { margin-bottom: 35px; }
+.round h3 { margin-bottom: 10px; font-size: 15px; text-transform: uppercase; color: #555; }
+
+/* =======================
+   RESPONSIVE
+   =======================*/
+
+@media (max-width: 768px) {
+    .bracket-column { min-width: 110px; }
+    .bracket-region-tabs { flex-wrap: wrap; }
+}

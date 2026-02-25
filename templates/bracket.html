@@ -513,64 +513,139 @@
 
 <!-- ========================= BRACKET ========================= -->
 <div id="bracketContainer">
-
-    <div class="side left-side">
-
-        <div class="region">
-            <h2 class="region-title">West</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="west_r64"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="west_r32"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="west_s16"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="west_e8"></div></div>
-        </div>
-
-        <div class="region">
-            <h2 class="region-title">South</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="south_r64"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="south_r32"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="south_s16"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="south_e8"></div></div>
-        </div>
-
+    <div class="bracket-region-tabs">
+        <button class="bracket-region-tab active" data-region="south">South</button>
+        <button class="bracket-region-tab" data-region="east">East</button>
+        <button class="bracket-region-tab" data-region="west">West</button>
+        <button class="bracket-region-tab" data-region="midwest">Midwest</button>
+        <button class="bracket-region-tab" data-region="finalfour">Final Four</button>
     </div>
 
-    <div class="final-four-area">
-        <div class="final-four">
-            <h2>Final Four</h2>
-            <div class="matchups" id="ff_left"></div>
-            <div class="matchups" id="ff_right"></div>
-        </div>
-        <div class="championship">
-            <h2>Championship</h2>
-            <div class="matchups" id="championship"></div>
-        </div>
-        <div class="national-champion">
-            <h2>National Champion</h2>
-            <div class="champion" id="champion"></div>
+    <!-- South Region -->
+    <div class="bracket-region-panel active" data-region="south">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64">
+                <h3>Round of 64</h3>
+                <div class="matchups" id="south_r64"></div>
+            </div>
+            <div class="bracket-column round-r32">
+                <h3>Round of 32</h3>
+                <div class="matchups" id="south_r32"></div>
+            </div>
+            <div class="bracket-column round-s16">
+                <h3>Sweet 16</h3>
+                <div class="matchups" id="south_s16"></div>
+            </div>
+            <div class="bracket-column round-e8">
+                <h3>Elite 8</h3>
+                <div class="matchups" id="south_e8"></div>
+            </div>
         </div>
     </div>
 
-    <div class="side right-side">
-
-        <div class="region">
-            <h2 class="region-title">East</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="east_r64"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="east_r32"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="east_s16"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="east_e8"></div></div>
+    <!-- East Region -->
+    <div class="bracket-region-panel" data-region="east">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64">
+                <h3>Round of 64</h3>
+                <div class="matchups" id="east_r64"></div>
+            </div>
+            <div class="bracket-column round-r32">
+                <h3>Round of 32</h3>
+                <div class="matchups" id="east_r32"></div>
+            </div>
+            <div class="bracket-column round-s16">
+                <h3>Sweet 16</h3>
+                <div class="matchups" id="east_s16"></div>
+            </div>
+            <div class="bracket-column round-e8">
+                <h3>Elite 8</h3>
+                <div class="matchups" id="east_e8"></div>
+            </div>
         </div>
-
-        <div class="region">
-            <h2 class="region-title">Midwest</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8"></div></div>
-        </div>
-
     </div>
 
+    <!-- West Region -->
+    <div class="bracket-region-panel" data-region="west">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64">
+                <h3>Round of 64</h3>
+                <div class="matchups" id="west_r64"></div>
+            </div>
+            <div class="bracket-column round-r32">
+                <h3>Round of 32</h3>
+                <div class="matchups" id="west_r32"></div>
+            </div>
+            <div class="bracket-column round-s16">
+                <h3>Sweet 16</h3>
+                <div class="matchups" id="west_s16"></div>
+            </div>
+            <div class="bracket-column round-e8">
+                <h3>Elite 8</h3>
+                <div class="matchups" id="west_e8"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Midwest Region -->
+    <div class="bracket-region-panel" data-region="midwest">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64">
+                <h3>Round of 64</h3>
+                <div class="matchups" id="midwest_r64"></div>
+            </div>
+            <div class="bracket-column round-r32">
+                <h3>Round of 32</h3>
+                <div class="matchups" id="midwest_r32"></div>
+            </div>
+            <div class="bracket-column round-s16">
+                <h3>Sweet 16</h3>
+                <div class="matchups" id="midwest_s16"></div>
+            </div>
+            <div class="bracket-column round-e8">
+                <h3>Elite 8</h3>
+                <div class="matchups" id="midwest_e8"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Four -->
+    <div class="bracket-region-panel final-four-panel" data-region="finalfour">
+        <div class="bracket-columns">
+            <div class="bracket-column round-ff">
+                <h3>Semifinal</h3>
+                <div class="matchups" id="ff_left"></div>
+            </div>
+            <div class="bracket-column round-ff">
+                <h3>Semifinal</h3>
+                <div class="matchups" id="ff_right"></div>
+            </div>
+            <div class="bracket-column round-champ">
+                <h3>Championship</h3>
+                <div class="matchups" id="championship"></div>
+                <div class="national-champion">
+                    <h3 style="margin-top:16px;">National Champion</h3>
+                    <div class="champion" id="champion"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.bracket-region-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const region = tab.dataset.region;
+            document.querySelectorAll('.bracket-region-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.bracket-region-panel').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = document.querySelector(`.bracket-region-panel[data-region="${region}"]`);
+            if (panel) panel.classList.add('active');
+        });
+    });
+});
+</script>
 
 <!-- ========================= SUBMIT MODAL ========================= -->
 <div class="modal-overlay" id="submitModal">

@@ -9,7 +9,6 @@ body {
     background: #f7f7f7;
 }
 
-/* Top bar controls */
 .top-bar {
     background: #0033a0;
     color: white;
@@ -19,40 +18,211 @@ body {
     align-items: center;
 }
 
-.top-bar h1 {
-    margin: 0;
-    font-size: 28px;
-}
-
-.controls select,
-.controls button {
-    padding: 8px 12px;
-    margin-left: 10px;
-    font-size: 14px;
-}
+.top-bar h1 { margin: 0; font-size: 28px; }
+.controls select, .controls button { padding: 8px 12px; margin-left: 10px; font-size: 14px; }
 
 #bracketContainer {
-    display: flex;
-    justify-content: center;
     padding: 20px;
+    max-width: 100%;
+    overflow-x: auto;
 }
 
 /* =======================
-   LEFT / RIGHT SIDES
+   REGION TABS (South, East, West, Midwest, Final Four)
    =======================*/
 
-.side {
-    width: 35%;
+.bracket-region-tabs {
     display: flex;
-    flex-direction: column;
-    gap: 60px;
+    gap: 4px;
+    margin-bottom: 20px;
+    padding: 0 4px;
 }
 
-.left-side { margin-right: 40px; }
-.right-side { margin-left: 40px; }
+.bracket-region-tab {
+    padding: 10px 20px;
+    background: rgba(0,51,160,0.15);
+    border: 1.5px solid rgba(0,51,160,0.3);
+    border-radius: 8px;
+    color: #0033a0;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bracket-region-tab:hover {
+    background: rgba(0,51,160,0.25);
+    border-color: #0033a0;
+}
+
+.bracket-region-tab.active {
+    background: #0033a0;
+    color: white;
+    border-color: #0033a0;
+}
 
 /* =======================
-   REGION BLOCK
+   BRACKET PANELS (one per tab)
+   =======================*/
+
+.bracket-region-panel {
+    display: none;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 24px;
+}
+
+.bracket-region-panel.active {
+    display: block;
+}
+
+/* =======================
+   ESPN-STYLE COLUMNS
+   Rounds flow left-to-right, matchups align in tree structure
+   =======================*/
+
+.bracket-columns {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    min-height: 520px;
+}
+
+.bracket-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 140px;
+    padding: 0 12px;
+    position: relative;
+}
+
+.bracket-column:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(0,51,160,0.2) 5%,
+        rgba(0,51,160,0.2) 95%,
+        transparent 100%);
+}
+
+.bracket-column h3 {
+    margin: 0 0 12px 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #666;
+}
+
+/* ESPN-style: flex columns with space-between for bracket tree flow */
+
+.bracket-region-panel:not(.final-four-panel) .bracket-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.bracket-region-panel:not(.final-four-panel) .round-r64 .matchups,
+.bracket-region-panel:not(.final-four-panel) .round-r32 .matchups,
+.bracket-region-panel:not(.final-four-panel) .round-s16 .matchups,
+.bracket-region-panel:not(.final-four-panel) .round-e8 .matchups {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+}
+
+/* =======================
+   MATCHUPS
+   =======================*/
+
+.matchups {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.matchup {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    overflow: hidden;
+    min-width: 120px;
+}
+
+/* =======================
+   TEAM ROWS
+   =======================*/
+
+.team {
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 0;
+}
+
+.team:hover { background: #e5e9ff; }
+
+.team.selected {
+    background: #0033a0;
+    color: white !important;
+}
+
+.team.eliminated { opacity: 0.6; }
+
+.team.correct { border-left: 4px solid #22c55e; }
+.team.correct .check-mark { margin-left: 6px; color: #22c55e; }
+
+.team.incorrect-actual {
+    background: rgba(220, 38, 38, 0.2) !important;
+    border-left: 4px solid #dc2626;
+}
+.team.incorrect-actual .team-name { color: #dc2626 !important; }
+
+.seed { font-weight: bold; margin-right: 6px; }
+.team-name { font-size: 13px; }
+
+/* =======================
+   FINAL FOUR TAB
+   Different layout: 3 columns (FF Left, FF Right, Championship)
+   =======================*/
+
+.bracket-region-panel.final-four-panel .bracket-columns {
+    min-height: 280px;
+}
+
+.bracket-region-panel.final-four-panel .bracket-column {
+    min-width: 160px;
+}
+
+.bracket-region-panel.final-four-panel .bracket-column.round-ff {
+    flex: 1;
+}
+
+.bracket-region-panel.final-four-panel .bracket-column.round-champ {
+    flex: 1;
+    justify-content: center;
+}
+
+.champion {
+    padding: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0033a0;
+    border: 2px solid #0033a0;
+    border-radius: 8px;
+    min-height: 40px;
+    margin-top: 16px;
+}
+
+/* =======================
+   LEGACY: region blocks (for backward compat in some views)
    =======================*/
 
 .region {
@@ -70,149 +240,14 @@ body {
     letter-spacing: 1px;
 }
 
-.round {
-    margin-bottom: 35px;
-}
-
-.round h3 {
-    margin-bottom: 10px;
-    font-size: 15px;
-    text-transform: uppercase;
-    color: #555;
-    letter-spacing: 1px;
-}
+.round { margin-bottom: 35px; }
+.round h3 { margin-bottom: 10px; font-size: 15px; text-transform: uppercase; color: #555; }
 
 /* =======================
-   MATCHUPS
+   RESPONSIVE
    =======================*/
 
-.matchups {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-/* Each matchup box */
-.matchup {
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: white;
-    width: 100%;
-    padding: 5px;
-}
-
-/* =======================
-   TEAM ROWS
-   =======================*/
-
-.team {
-    padding: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    border-radius: 4px;
-}
-
-/* Normal team row hover */
-.team:hover {
-    background: #e5e9ff;
-}
-
-/* Selected winning team (advances) */
-.team.selected {
-    background: #0033a0;
-    color: white !important;
-}
-
-/* Losing team gets a subtle fade */
-.team.eliminated {
-    opacity: 0.6;
-}
-
-/* Correct prediction: check mark + green accent */
-.team.correct {
-    border-left: 4px solid #22c55e;
-}
-.team.correct .check-mark {
-    margin-left: 6px;
-    color: #22c55e;
-}
-
-/* Actual winner when user guessed wrong: red highlight */
-.team.incorrect-actual {
-    background: rgba(220, 38, 38, 0.2) !important;
-    border-left: 4px solid #dc2626;
-}
-.team.incorrect-actual .team-name {
-    color: #dc2626 !important;
-}
-
-/* Seed styling */
-.seed {
-    font-weight: bold;
-    margin-right: 6px;
-}
-
-/* Team name text */
-.team-name {
-    font-size: 14px;
-}
-
-/* =======================
-   FINAL FOUR + CHAMPION
-   =======================*/
-
-.final-four-area {
-    width: 30%;
-    margin: 0 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-}
-
-.final-four,
-.championship,
-.national-champion {
-    background: white;
-    padding: 15px;
-    border-radius: 6px;
-    box-shadow: 0 0 6px rgba(0,0,0,0.1);
-    text-align: center;
-}
-
-.final-four h2,
-.championship h2,
-.national-champion h2 {
-    margin-top: 0;
-    color: #0033a0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.champion {
-    padding: 12px;
-    font-size: 18px;
-    font-weight: bold;
-    color: #0033a0;
-    border: 2px solid #0033a0;
-    border-radius: 8px;
-    min-height: 40px;
-}
-
-/* =======================
-   RESPONSIVE (Mobile)
-   =======================*/
-
-@media (max-width: 1100px) {
-    #bracketContainer {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .side {
-        width: 90%;
-    }
-
-    .final-four-area {
-        width: 90%;
-    }
+@media (max-width: 768px) {
+    .bracket-column { min-width: 110px; }
+    .bracket-region-tabs { flex-wrap: wrap; }
 }

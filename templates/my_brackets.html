@@ -109,6 +109,20 @@
             pointer-events: none;
             user-select: none;
         }
+        .bracket-region-tabs { pointer-events: auto; }
+
+        /* Region tabs dark theme */
+        .bracket-region-tab {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.25);
+            color: rgba(255,255,255,0.9);
+        }
+        .bracket-region-tab:hover { background: rgba(255,255,255,0.18); }
+        .bracket-region-tab.active {
+            background: #f0d060;
+            color: #020b1f;
+            border-color: #f0d060;
+        }
 
         /* ── EMPTY STATE ── */
         .empty-state { text-align: center; padding: 100px 20px; }
@@ -179,60 +193,59 @@
 <!-- ========================= BRACKET PANELS ========================= -->
 {% for b in brackets %}
 <div class="bracket-panel {% if loop.first %}active{% endif %}" id="panel-{{ b.id }}">
-<div id="bracketContainer">
-
-    <div class="side left-side">
-        <div class="region">
-            <h2 class="region-title">West</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="west_r64_{{ b.id }}"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="west_r32_{{ b.id }}"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="west_s16_{{ b.id }}"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="west_e8_{{ b.id }}"></div></div>
-        </div>
-        <div class="region">
-            <h2 class="region-title">South</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="south_r64_{{ b.id }}"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="south_r32_{{ b.id }}"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="south_s16_{{ b.id }}"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="south_e8_{{ b.id }}"></div></div>
+<div id="bracketContainer" class="bracket-container-inner">
+    <div class="bracket-region-tabs">
+        <button class="bracket-region-tab active" data-region="south">South</button>
+        <button class="bracket-region-tab" data-region="east">East</button>
+        <button class="bracket-region-tab" data-region="west">West</button>
+        <button class="bracket-region-tab" data-region="midwest">Midwest</button>
+        <button class="bracket-region-tab" data-region="finalfour">Final Four</button>
+    </div>
+    <div class="bracket-region-panel active" data-region="south">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="south_r64_{{ b.id }}"></div></div>
+            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="south_r32_{{ b.id }}"></div></div>
+            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="south_s16_{{ b.id }}"></div></div>
+            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="south_e8_{{ b.id }}"></div></div>
         </div>
     </div>
-
-    <div class="final-four-area">
-        <div class="final-four">
-            <h2>Final Four</h2>
-            <div class="matchups" id="ff_left_{{ b.id }}"></div>
-            <div class="matchups" id="ff_right_{{ b.id }}"></div>
-        </div>
-        <div class="championship">
-            <h2>Championship</h2>
-            <div class="matchups" id="championship_{{ b.id }}"></div>
-        </div>
-        <div class="national-champion">
-            <h2>National Champion</h2>
-            <div class="champion" id="champion_{{ b.id }}"></div>
+    <div class="bracket-region-panel" data-region="east">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="east_r64_{{ b.id }}"></div></div>
+            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="east_r32_{{ b.id }}"></div></div>
+            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="east_s16_{{ b.id }}"></div></div>
+            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="east_e8_{{ b.id }}"></div></div>
         </div>
     </div>
-
-    <div class="side right-side">
-        <div class="region">
-            <h2 class="region-title">East</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="east_r64_{{ b.id }}"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="east_r32_{{ b.id }}"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="east_s16_{{ b.id }}"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="east_e8_{{ b.id }}"></div></div>
-        </div>
-        <div class="region">
-            <h2 class="region-title">Midwest</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64_{{ b.id }}"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32_{{ b.id }}"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16_{{ b.id }}"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8_{{ b.id }}"></div></div>
+    <div class="bracket-region-panel" data-region="west">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="west_r64_{{ b.id }}"></div></div>
+            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="west_r32_{{ b.id }}"></div></div>
+            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="west_s16_{{ b.id }}"></div></div>
+            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="west_e8_{{ b.id }}"></div></div>
         </div>
     </div>
-
-</div><!-- /bracketContainer -->
-</div><!-- /panel -->
+    <div class="bracket-region-panel" data-region="midwest">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64_{{ b.id }}"></div></div>
+            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32_{{ b.id }}"></div></div>
+            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16_{{ b.id }}"></div></div>
+            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8_{{ b.id }}"></div></div>
+        </div>
+    </div>
+    <div class="bracket-region-panel final-four-panel" data-region="finalfour">
+        <div class="bracket-columns">
+            <div class="bracket-column round-ff"><h3>Semifinal</h3><div class="matchups" id="ff_left_{{ b.id }}"></div></div>
+            <div class="bracket-column round-ff"><h3>Semifinal</h3><div class="matchups" id="ff_right_{{ b.id }}"></div></div>
+            <div class="bracket-column round-champ">
+                <h3>Championship</h3>
+                <div class="matchups" id="championship_{{ b.id }}"></div>
+                <div class="national-champion"><h3 style="margin-top:16px;">National Champion</h3><div class="champion" id="champion_{{ b.id }}"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
 {% endfor %}
 
 {% else %}
@@ -332,7 +345,21 @@ document.addEventListener('DOMContentLoaded', () => {
     allData.forEach((d, i) => renderBracket(d, allIds[i]));
 });
 
-/* Tab switching */
+/* Region tab switching (per bracket panel) */
+document.querySelectorAll('.bracket-container-inner').forEach(container => {
+    container.querySelectorAll('.bracket-region-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const region = tab.dataset.region;
+            container.querySelectorAll('.bracket-region-tab').forEach(t => t.classList.remove('active'));
+            container.querySelectorAll('.bracket-region-panel').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = container.querySelector(`.bracket-region-panel[data-region="${region}"]`);
+            if (panel) panel.classList.add('active');
+        });
+    });
+});
+
+/* Bracket tab switching */
 document.querySelectorAll('.bracket-tab').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.bracket-tab').forEach(b => b.classList.remove('active'));

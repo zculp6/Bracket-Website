@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ bracket.bracket_name }} · {{ bracket.user.username }} | March Madness</title>
+    <title>My Brackets | March Madness</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bracket.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ── NAV DIVIDER ── */
+        /* ── NAV DIVIDER (matches bracket.html) ── */
         .nav-divider {
             width: 1px; height: 18px;
             background: rgba(255,255,255,0.18);
@@ -18,7 +18,7 @@
         }
         @media (max-width: 600px) { .nav-divider { display: none; } }
 
-        /* ── CONTROLS BAR — same structure as bracket.html ── */
+        /* ── CONTROLS BAR — identical to bracket.html ── */
         .bracket-controls {
             background: #0033a0;
             padding: 12px 24px;
@@ -32,20 +32,32 @@
             top: 64px;
             z-index: 200;
         }
-        .bracket-controls-left {
-            display: flex; flex-direction: column; gap: 2px;
-        }
         .bracket-controls h1 {
             margin: 0;
-            font-size: 22px; color: #fff;
-            font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px;
-        }
-        .bracket-byline {
-            font-size: 12px; color: rgba(255,255,255,0.5);
-            font-family: 'DM Sans', sans-serif;
+            font-size: 22px;
+            color: #fff;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
         }
         .controls-right { display: flex; align-items: center; gap: 10px; }
 
+        /* Bracket switcher tabs sit in the controls bar left side */
+        .bracket-tab {
+            padding: 7px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 7px;
+            color: rgba(255,255,255,0.75);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .bracket-tab:hover { background: rgba(255,255,255,0.18); color: #fff; }
+        .bracket-tab.active { background: #fff; color: #0033a0; border-color: #fff; }
+
+        /* Score pill — matches submit button styling */
         .score-pill {
             background: rgba(240,208,96,0.15);
             border: 1px solid rgba(240,208,96,0.35);
@@ -60,6 +72,8 @@
             color: rgba(240,208,96,0.5); letter-spacing: 2px;
             text-transform: uppercase; margin-right: 6px;
         }
+
+        /* Locked badge — mirrors the autofill trigger style */
         .locked-badge {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 8px 14px;
@@ -71,23 +85,59 @@
             font-family: 'DM Sans', sans-serif;
             white-space: nowrap;
         }
-        .btn-back {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 8px 16px;
-            background: rgba(255,255,255,0.1);
-            border: 1.5px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            color: rgba(255,255,255,0.85);
-            font-size: 13px; font-weight: 600;
+
+        /* New bracket CTA */
+        .btn-new-bracket {
+            padding: 9px 18px;
+            background: #f0d060;
+            color: #020b1f;
+            font-size: 14px; font-weight: 700;
             font-family: 'DM Sans', sans-serif;
+            border: none; border-radius: 8px;
             text-decoration: none;
             transition: background 0.15s;
             white-space: nowrap;
         }
-        .btn-back:hover { background: rgba(255,255,255,0.18); }
+        .btn-new-bracket:hover { background: #ffe066; }
 
-        /* Lock all interactions */
-        #bracketContainer { pointer-events: none; user-select: none; }
+        /* ── PANEL VISIBILITY ── */
+        .bracket-panel { display: none; }
+        .bracket-panel.active { display: block; }
+
+        /* ── LOCK ALL BRACKET INTERACTIONS ── */
+        .bracket-panel #bracketContainer {
+            pointer-events: none;
+            user-select: none;
+        }
+        .bracket-region-tabs { pointer-events: auto; }
+
+        /* Region tabs dark theme */
+        .bracket-region-tab {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.25);
+            color: rgba(255,255,255,0.9);
+        }
+        .bracket-region-tab:hover { background: rgba(255,255,255,0.18); }
+        .bracket-region-tab.active {
+            background: #f0d060;
+            color: #020b1f;
+            border-color: #f0d060;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 100px 20px; }
+        .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
+        .empty-state h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px; letter-spacing: 2px; margin-bottom: 10px;
+        }
+        .empty-state p { color: rgba(0,0,0,0.4); margin-bottom: 24px; font-size: 15px; }
+        .empty-state a {
+            display: inline-block; padding: 12px 28px;
+            background: #0033a0; color: #fff; border-radius: 8px;
+            text-decoration: none; font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -98,10 +148,10 @@
     <div class="nav-links">
         <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
         {% if current_user.is_authenticated %}
-        <a href="/my_brackets"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        <a href="/my_brackets" class="active"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
         {% endif %}
         <span class="nav-divider"></span>
-        <a href="/leaderboard" class="active"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
         <a href="/rankings_stats"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
         <span class="nav-divider"></span>
         {% if current_user.is_authenticated %}
@@ -112,77 +162,105 @@
     </div>
 </nav>
 
+{% if brackets %}
+
 <!-- ========================= CONTROLS BAR ========================= -->
 <div class="bracket-controls">
-    <div class="bracket-controls-left">
-        <h1>{{ bracket.bracket_name }}</h1>
-        <span class="bracket-byline">{{ bracket.user.username }} · Entry {{ bracket.entry_number }}</span>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <h1 id="activeName">{{ brackets[0].bracket_name }}</h1>
+        {% if brackets|length > 1 %}
+        <div style="display:flex;gap:6px;">
+            {% for b in brackets %}
+            <button class="bracket-tab {% if loop.first %}active{% endif %}"
+                    data-id="{{ b.id }}"
+                    data-name="{{ b.bracket_name }}"
+                    data-score="{{ b.score }}">
+                {{ b.bracket_name }}
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
     <div class="controls-right">
-        <a href="/leaderboard" class="btn-back">← Leaderboard</a>
+        {% if brackets|length < 2 %}
+        <a href="/bracket" class="btn-new-bracket">➕ New Bracket</a>
+        {% endif %}
         <span class="locked-badge">🔒 Submitted</span>
-        <div class="score-pill"><small>Score</small>{{ bracket.score }}</div>
+        <div class="score-pill" id="activeScore"><small>Score</small>{{ brackets[0].score }}</div>
     </div>
 </div>
 
-<!-- ========================= BRACKET ========================= -->
-<div id="bracketContainer">
-
-    <div class="side left-side">
-        <div class="region">
-            <h2 class="region-title">West</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="west_r64"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="west_r32"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="west_s16"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="west_e8"></div></div>
-        </div>
-        <div class="region">
-            <h2 class="region-title">South</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="south_r64"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="south_r32"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="south_s16"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="south_e8"></div></div>
+<!-- ========================= BRACKET PANELS ========================= -->
+{% for b in brackets %}
+<div class="bracket-panel {% if loop.first %}active{% endif %}" id="panel-{{ b.id }}">
+<div id="bracketContainer" class="bracket-container-inner">
+    <div class="bracket-region-tabs">
+        <button class="bracket-region-tab active" data-region="south">South</button>
+        <button class="bracket-region-tab" data-region="east">East</button>
+        <button class="bracket-region-tab" data-region="west">West</button>
+        <button class="bracket-region-tab" data-region="midwest">Midwest</button>
+        <button class="bracket-region-tab" data-region="finalfour">Final Four</button>
+    </div>
+    <div class="bracket-region-panel active" data-region="south">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="south_r64_{{ b.id }}"></div></div>
+            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="south_r32_{{ b.id }}"></div></div>
+            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="south_s16_{{ b.id }}"></div></div>
+            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="south_e8_{{ b.id }}"></div></div>
         </div>
     </div>
-
-    <div class="final-four-area">
-        <div class="final-four">
-            <h2>Final Four</h2>
-            <div class="matchups" id="ff_left"></div>
-            <div class="matchups" id="ff_right"></div>
-        </div>
-        <div class="championship">
-            <h2>Championship</h2>
-            <div class="matchups" id="championship"></div>
-        </div>
-        <div class="national-champion">
-            <h2>National Champion</h2>
-            <div class="champion" id="champion"></div>
+    <div class="bracket-region-panel" data-region="east">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="east_r64_{{ b.id }}"></div></div>
+            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="east_r32_{{ b.id }}"></div></div>
+            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="east_s16_{{ b.id }}"></div></div>
+            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="east_e8_{{ b.id }}"></div></div>
         </div>
     </div>
-
-    <div class="side right-side">
-        <div class="region">
-            <h2 class="region-title">East</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="east_r64"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="east_r32"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="east_s16"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="east_e8"></div></div>
-        </div>
-        <div class="region">
-            <h2 class="region-title">Midwest</h2>
-            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64"></div></div>
-            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32"></div></div>
-            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16"></div></div>
-            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8"></div></div>
+    <div class="bracket-region-panel" data-region="west">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="west_r64_{{ b.id }}"></div></div>
+            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="west_r32_{{ b.id }}"></div></div>
+            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="west_s16_{{ b.id }}"></div></div>
+            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="west_e8_{{ b.id }}"></div></div>
         </div>
     </div>
-
+    <div class="bracket-region-panel" data-region="midwest">
+        <div class="bracket-columns">
+            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64_{{ b.id }}"></div></div>
+            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32_{{ b.id }}"></div></div>
+            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16_{{ b.id }}"></div></div>
+            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8_{{ b.id }}"></div></div>
+        </div>
+    </div>
+    <div class="bracket-region-panel final-four-panel" data-region="finalfour">
+        <div class="bracket-columns">
+            <div class="bracket-column round-ff"><h3>Semifinal</h3><div class="matchups" id="ff_left_{{ b.id }}"></div></div>
+            <div class="bracket-column round-ff"><h3>Semifinal</h3><div class="matchups" id="ff_right_{{ b.id }}"></div></div>
+            <div class="bracket-column round-champ">
+                <h3>Championship</h3>
+                <div class="matchups" id="championship_{{ b.id }}"></div>
+                <div class="national-champion"><h3 style="margin-top:16px;">National Champion</h3><div class="champion" id="champion_{{ b.id }}"></div></div>
+            </div>
+        </div>
+    </div>
 </div>
+</div>
+{% endfor %}
+
+{% else %}
+<div class="empty-state">
+    <div class="icon">📋</div>
+    <h3>No Brackets Yet</h3>
+    <p>You haven't submitted any brackets yet.</p>
+    <a href="/bracket">⚡ Fill My Bracket</a>
+</div>
+{% endif %}
 
 <!-- ========================= JS ========================= -->
 <script>
-const data = {{ bracket.bracket_data | tojson }};
+const allData = {{ brackets | map(attribute='bracket_data') | list | tojson }};
+const allIds  = {{ brackets | map(attribute='id')           | list | tojson }};
 const trueResults = {{ (true_results or {}) | tojson }};
 
 const ROUND_ORDER = [
@@ -210,18 +288,19 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid) {
     return { c1, c2, check1: correct && n1 === userPick, check2: correct && n2 === userPick };
 }
 
-function render() {
+function renderBracket(data, bid) {
     CONTAINERS.forEach(cid => {
         const teams = data[cid];
         if (!teams || !teams.length) return;
 
+        /* which names advance out of this round? */
         const winners = new Set();
         ROUND_ORDER.filter(([c]) => c === cid).forEach(([, nxt]) => {
             (data[nxt] || []).forEach(t => winners.add(typeof t === 'string' ? t : t.name));
         });
         if (cid === 'championship' && data.champion) winners.add(data.champion);
 
-        const container = document.getElementById(cid);
+        const container = document.getElementById(cid + '_' + bid);
         if (!container) return;
         container.innerHTML = '';
 
@@ -247,9 +326,10 @@ function render() {
                 </div>`;
             container.appendChild(div);
         }
+
     });
 
-    const ch = document.getElementById('champion');
+    const ch = document.getElementById('champion_' + bid);
     const actualChamp = (trueResults['championship'] || [])[0];
     if (ch && data.champion) {
         ch.innerText = data.champion;
@@ -261,7 +341,35 @@ function render() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', render);
+document.addEventListener('DOMContentLoaded', () => {
+    allData.forEach((d, i) => renderBracket(d, allIds[i]));
+});
+
+/* Region tab switching (per bracket panel) */
+document.querySelectorAll('.bracket-container-inner').forEach(container => {
+    container.querySelectorAll('.bracket-region-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const region = tab.dataset.region;
+            container.querySelectorAll('.bracket-region-tab').forEach(t => t.classList.remove('active'));
+            container.querySelectorAll('.bracket-region-panel').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = container.querySelector(`.bracket-region-panel[data-region="${region}"]`);
+            if (panel) panel.classList.add('active');
+        });
+    });
+});
+
+/* Bracket tab switching */
+document.querySelectorAll('.bracket-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.bracket-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.bracket-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.id).classList.add('active');
+        document.getElementById('activeName').textContent = btn.dataset.name;
+        document.getElementById('activeScore').innerHTML = `<small>Score</small>${btn.dataset.score}`;
+    });
+});
 </script>
 
 </body>
