@@ -56,8 +56,8 @@ body {
 }
 
 .bracket-region-tab.active {
-    background: #0033a0;
-    color: white;
+    background: #fff;
+    color: #0033a0;
     border-color: #0033a0;
 }
 
