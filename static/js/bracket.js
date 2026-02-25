@@ -266,18 +266,25 @@ function autofillBracket(data) {
 
 /* =========================================================
    BUILD JSON FOR SUBMISSION
+   Saves full matchup pairs (both teams) for correct display when viewing brackets.
    ========================================================= */
 function buildBracketJSON() {
     const result = {};
     document.querySelectorAll(".matchups").forEach(roundElem => {
         const id = roundElem.id;
         if (!id) return;
-        const picks = [];
+        const pairs = [];
         roundElem.querySelectorAll(".matchup").forEach(m => {
-            const sel = m.querySelector(".team.selected");
-            picks.push(sel ? sel.getAttribute("data-name") : null);
+            const teams = m.querySelectorAll(".team");
+            const t1 = teams[0], t2 = teams[1];
+            if (t1 && t2) {
+                pairs.push(
+                    { seed: t1.getAttribute("data-seed") || "", name: t1.getAttribute("data-name") || "" },
+                    { seed: t2.getAttribute("data-seed") || "", name: t2.getAttribute("data-name") || "" }
+                );
+            }
         });
-        result[id] = picks;
+        result[id] = pairs;
     });
     const champDiv = document.getElementById("champion");
     result["champion"] = champDiv ? champDiv.innerText.trim() : null;
