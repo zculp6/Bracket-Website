@@ -16,3 +16,19 @@ class Bracket(db.Model):
     score = db.Column(db.Integer, default=0)
 
     user = db.relationship('User', backref='brackets')
+
+class TournamentResult(db.Model):
+    """Stores each official game winner by round container ID and slot index.
+    This mirrors the bracket.js structure exactly:
+      round_id   = the .matchups div ID  (e.g. "west_r64", "championship")
+      slot_index = which matchup in that container (0-based)
+      winner_name = the winning team name string
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    round_id    = db.Column(db.String(30),  nullable=False)
+    slot_index  = db.Column(db.Integer,     nullable=False)
+    winner_name = db.Column(db.String(100), nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('round_id', 'slot_index', name='uq_round_slot'),
+    )

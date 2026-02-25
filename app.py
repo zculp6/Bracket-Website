@@ -5,6 +5,8 @@ from flask_login import LoginManager, login_required, current_user
 from flask_bcrypt import Bcrypt
 from simulation import simulate_tournament, chalk_bracket, random_bracket, random_probabilistic_bracket, ranking_bracket
 from simulation import SEED_REGION_MAPPING, REGION_TO_ROUND_ID
+from scoring import score_bracket
+from models import TournamentResult, Bracket
 
 # ---------------------------------------
 # APP INIT
@@ -151,6 +153,63 @@ def submit_bracket():
 
     return jsonify({"message": "Bracket submitted successfully!"})
 
+@app.route("/admin/set_result", methods=["POST"])
+def set_result():
+    """
+    POST JSON: { "round_id": "west_r32", "slot_index": 0, "winner_name": "Florida" }
+    Protected — add a check for an admin password or env flag.
+    """
+    secret = request.headers.get("X-Admin-Secret")
+    if secret != os.environ.get("ADMIN_SECRET", "changeme"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    round_id    = data["round_id"]
+    slot_index  = data["slot_index"]
+    winner_name = data["winner_name"]
+
+    # Upsert the result
+    existing = TournamentResult.query.filter_by(
+        round_id=round_id, slot_index=slot_index
+    ).first()
+
+    if existing:
+        existing.winner_name = winner_name
+    else:
+        db.session.add(TournamentResult(
+            round_id=round_id,
+            slot_index=slot_index,
+            winner_name=winner_name
+        ))
+
+    db.session.commit()
+    _rescore_all_brackets()
+    return jsonify({"message": f"Result saved and brackets rescored."})
+
+
+def _build_true_results() -> dict:
+    """Pull all TournamentResult rows and shape them into the same dict format
+    as a user bracket: { "west_r32": ["Florida", "St. John's", ...], ... }"""
+    results = TournamentResult.query.all()
+    shaped = {}
+    for r in results:
+        if r.round_id not in shaped:
+            shaped[r.round_id] = []
+        # Extend list to fit slot_index
+        while len(shaped[r.round_id]) <= r.slot_index:
+            shaped[r.round_id].append(None)
+        shaped[r.round_id][r.slot_index] = r.winner_name
+    return shaped
+
+
+def _rescore_all_brackets():
+    """Recompute scores for every bracket based on current results."""
+    true_results = _build_true_results()
+    if not true_results:
+        return
+    for bracket in Bracket.query.all():
+        bracket.score = score_bracket(bracket.bracket_data, true_results)
+    db.session.commit()
 
 # ---------------------------------------
 # RUN SERVER

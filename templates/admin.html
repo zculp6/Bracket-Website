@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | March Madness</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:        #080e1c;
+            --surface:   #0d1526;
+            --border:    rgba(255,255,255,0.08);
+            --blue:      #0033a0;
+            --blue-bright: #4d8aff;
+            --gold:      #f0d060;
+            --red:       #ff4d4d;
+            --green:     #30d98a;
+            --text:      #e8eaf0;
+            --muted:     rgba(232,234,240,0.4);
+            --mono:      'DM Mono', monospace;
+            --sans:      'DM Sans', sans-serif;
+            --display:   'Bebas Neue', sans-serif;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ---- SCANLINE OVERLAY ---- */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.06) 2px,
+                rgba(0,0,0,0.06) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ---- NAVBAR ---- */
+        .site-nav {
+            background: rgba(8,14,28,0.97) !important;
+            border-bottom: 1px solid var(--border);
+            box-shadow: none !important;
+            backdrop-filter: blur(12px);
+        }
+        .site-nav .nav-logo {
+            font-family: var(--display);
+            font-size: 22px;
+            letter-spacing: 3px;
+            color: var(--blue-bright) !important;
+        }
+        .site-nav .nav-links a.active {
+            background: rgba(255,77,77,0.15) !important;
+            color: #ff8888 !important;
+        }
+
+        /* ---- LAYOUT ---- */
+        .admin-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
+        }
+
+        /* ---- PAGE HEADER ---- */
+        .page-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header-left h1 {
+            font-family: var(--display);
+            font-size: 56px;
+            letter-spacing: 4px;
+            line-height: 1;
+            background: linear-gradient(135deg, #ff4d4d, #ff8844);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header-left p {
+            color: var(--muted);
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 6px;
+            font-family: var(--mono);
+        }
+
+        .auth-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .auth-badge input {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 6px;
+            color: var(--gold);
+            font-family: var(--mono);
+            font-size: 13px;
+            padding: 6px 10px;
+            width: 200px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .auth-badge input:focus { border-color: var(--gold); }
+        .auth-badge input::placeholder { color: rgba(255,255,255,0.2); }
+
+        /* ---- GRID ---- */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 860px) {
+            .admin-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ---- CARD ---- */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .card-header h2 {
+            font-family: var(--display);
+            font-size: 20px;
+            letter-spacing: 2px;
+            color: var(--text);
+        }
+
+        .card-header .badge {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.06);
+            color: var(--muted);
+        }
+
+        .card-body { padding: 20px; }
+
+        /* ---- FORM ---- */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full { grid-column: 1 / -1; }
+
+        label {
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-weight: 500;
+        }
+
+        select, input[type="text"], input[type="password"] {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 14px;
+            padding: 10px 14px;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+            -webkit-appearance: none;
+        }
+
+        select { cursor: pointer; }
+        select option { background: #1a2340; color: var(--text); }
+
+        select:focus, input[type="text"]:focus, input[type="password"]:focus {
+            border-color: var(--blue-bright);
+            background: rgba(77,138,255,0.06);
+        }
+
+        /* ---- WINNER INPUT with suggestion ---- */
+        .winner-wrap {
+            position: relative;
+        }
+
+        .winner-wrap input {
+            padding-right: 36px;
+        }
+
+        .winner-suggestions {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: #1a2340;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .winner-suggestions.open { display: block; }
+
+        .suggestion-item {
+            padding: 9px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.1s;
+        }
+
+        .suggestion-item:hover, .suggestion-item.focused {
+            background: rgba(77,138,255,0.15);
+        }
+
+        .suggestion-seed {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--blue-bright);
+            background: rgba(77,138,255,0.12);
+            padding: 2px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        /* ---- SUBMIT BTN ---- */
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #0033a0, #0047d4);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--sans);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: opacity 0.15s, transform 0.1s;
+            margin-top: 6px;
+        }
+
+        .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-submit:active { transform: translateY(0); }
+        .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ---- TOAST ---- */
+        .toast-area {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10000;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.3s ease forwards;
+            max-width: 320px;
+        }
+
+        .toast.success {
+            background: rgba(48,217,138,0.12);
+            border-color: rgba(48,217,138,0.3);
+            color: var(--green);
+        }
+
+        .toast.error {
+            background: rgba(255,77,77,0.12);
+            border-color: rgba(255,77,77,0.3);
+            color: #ff8888;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ---- RESULTS LOG ---- */
+        .results-log {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            max-height: 520px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            transition: background 0.1s;
+            animation: fadeRow 0.4s ease forwards;
+        }
+
+        .log-entry:last-child { border-bottom: none; }
+        .log-entry:hover { background: rgba(255,255,255,0.02); }
+
+        @keyframes fadeRow {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-round {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(77,138,255,0.12);
+            color: var(--blue-bright);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .log-slot {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        .log-winner {
+            font-weight: 700;
+            flex: 1;
+            color: var(--text);
+        }
+
+        .log-delete {
+            background: none;
+            border: none;
+            color: rgba(255,77,77,0.4);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: color 0.15s, background 0.15s;
+            width: auto;
+        }
+        .log-delete:hover {
+            color: var(--red);
+            background: rgba(255,77,77,0.1);
+        }
+
+        .log-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            font-family: var(--mono);
+        }
+
+        /* ---- RESCORE PANEL ---- */
+        .rescore-panel {
+            background: rgba(240,208,96,0.06);
+            border: 1px solid rgba(240,208,96,0.2);
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .rescore-panel p {
+            font-size: 13px;
+            color: rgba(240,208,96,0.8);
+            line-height: 1.5;
+        }
+
+        .rescore-panel p strong { color: var(--gold); }
+
+        .btn-rescore {
+            background: var(--gold);
+            color: #020b1f;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: opacity 0.15s;
+            width: auto;
+        }
+        .btn-rescore:hover { opacity: 0.85; }
+
+        /* ---- SCORE SUMMARY ---- */
+        .score-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 0;
+        }
+
+        .score-stat {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 12px;
+            text-align: center;
+        }
+
+        .score-stat .val {
+            font-family: var(--display);
+            font-size: 32px;
+            color: var(--blue-bright);
+            line-height: 1;
+        }
+
+        .score-stat .lbl {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* ---- ROUND TABS ---- */
+        .round-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .round-tab {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: none;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s;
+            width: auto;
+        }
+
+        .round-tab:hover { border-color: var(--blue-bright); color: var(--blue-bright); }
+        .round-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+        /* scrollbar */
+        .results-log::-webkit-scrollbar { width: 4px; }
+        .results-log::-webkit-scrollbar-track { background: transparent; }
+        .results-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<!-- ========================= NAVBAR ========================= -->
+<nav class="site-nav">
+    <a href="/" class="nav-logo">🏀 MM Bracket</a>
+    <div class="nav-links">
+        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+        <a href="/bracket"><span class="nav-icon">📋</span><span class="nav-label">My Bracket</span></a>
+        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+        <a href="/admin" class="active"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+        <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
+    </div>
+</nav>
+
+<div class="admin-wrap">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1>Admin Panel</h1>
+            <p>Tournament Result Entry &amp; Scoring Control</p>
+        </div>
+        <div class="auth-badge">
+            <span>🔐 Admin Secret</span>
+            <input type="password" id="adminSecret" placeholder="Enter secret key">
+        </div>
+    </div>
+
+    <div class="admin-grid">
+
+        <!-- LEFT COLUMN: Entry form + stats -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+            <!-- ENTER RESULT CARD -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Enter Game Result</h2>
+                    <span class="badge">Live Update</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Region</label>
+                            <select id="regionSelect">
+                                <option value="">— Select Region —</option>
+                                <option value="west">West</option>
+                                <option value="south">South</option>
+                                <option value="east">East</option>
+                                <option value="midwest">Midwest</option>
+                                <option value="final_four">Final Four</option>
+                                <option value="national">National</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Round</label>
+                            <select id="roundSelect" disabled>
+                                <option value="">— Select Round —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Matchup Slot <span style="color:var(--muted);font-size:10px;">(0 = first game)</span></label>
+                            <select id="slotSelect" disabled>
+                                <option value="">— Select Slot —</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Winner</label>
+                            <div class="winner-wrap">
+                                <input type="text" id="winnerInput" placeholder="Team name…" disabled autocomplete="off">
+                                <div class="winner-suggestions" id="winnerSuggestions"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-submit" id="submitResult" disabled>
+                        Save Result &amp; Rescore All Brackets
+                    </button>
+                </div>
+            </div>
+
+            <!-- STATS CARD -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Scoring Stats</h2>
+                    <span class="badge" id="lastUpdated">Not yet scored</span>
+                </div>
+                <div class="card-body">
+                    <div class="score-summary">
+                        <div class="score-stat">
+                            <div class="val" id="statResults">0</div>
+                            <div class="lbl">Results Logged</div>
+                        </div>
+                        <div class="score-stat">
+                            <div class="val" id="statBrackets">—</div>
+                            <div class="lbl">Brackets Scored</div>
+                        </div>
+                        <div class="score-stat">
+                            <div class="val" id="statLeader">—</div>
+                            <div class="lbl">Top Score</div>
+                        </div>
+                    </div>
+
+                    <div class="rescore-panel">
+                        <p><strong>Manual rescore</strong><br>Force recalculate all bracket scores from current results.</p>
+                        <button class="btn-rescore" id="rescoreBtn">↻ Rescore Now</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Results log -->
+        <div class="card" style="position:sticky;top:80px;">
+            <div class="card-header">
+                <h2>Results Log</h2>
+                <span class="badge" id="logCount">0 entries</span>
+            </div>
+            <div class="card-body" style="padding:14px 14px 6px;">
+                <div class="round-tabs" id="roundFilterTabs">
+                    <button class="round-tab active" data-filter="all">All</button>
+                    <button class="round-tab" data-filter="r64">R64</button>
+                    <button class="round-tab" data-filter="r32">R32</button>
+                    <button class="round-tab" data-filter="s16">S16</button>
+                    <button class="round-tab" data-filter="e8">E8</button>
+                    <button class="round-tab" data-filter="ff">FF</button>
+                    <button class="round-tab" data-filter="championship">🏆</button>
+                </div>
+            </div>
+            <div class="results-log" id="resultsLog">
+                <div class="log-empty">No results logged yet.</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- TOAST AREA -->
+<div class="toast-area" id="toastArea"></div>
+
+<script>
+/* =========================================================
+   DATA
+   ========================================================= */
+const TEAMS = {{ teams_json | tojson }};
+
+const ROUND_OPTIONS = {
+    west:       [["west_r64","Round of 64"],["west_r32","Round of 32"],["west_s16","Sweet 16"],["west_e8","Elite 8"]],
+    south:      [["south_r64","Round of 64"],["south_r32","Round of 32"],["south_s16","Sweet 16"],["south_e8","Elite 8"]],
+    east:       [["east_r64","Round of 64"],["east_r32","Round of 32"],["east_s16","Sweet 16"],["east_e8","Elite 8"]],
+    midwest:    [["midwest_r64","Round of 64"],["midwest_r32","Round of 32"],["midwest_s16","Sweet 16"],["midwest_e8","Elite 8"]],
+    final_four: [["ff_left","FF Left (West/South)"],["ff_right","FF Right (East/Midwest)"]],
+    national:   [["championship","Championship Game"]]
+};
+
+const SLOT_COUNTS = {
+    r64: 8, r32: 4, s16: 2, e8: 1,
+    ff_left: 1, ff_right: 1, championship: 1
+};
+
+function getSlotsForRound(roundId) {
+    for (const [key, count] of Object.entries(SLOT_COUNTS)) {
+        if (roundId.endsWith(key) || roundId === key) return count;
+    }
+    return 4;
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let loggedResults = [];    // { round_id, slot_index, winner_name }
+let currentFilter = 'all';
+
+/* =========================================================
+   DOM REFS
+   ========================================================= */
+const regionSel    = document.getElementById('regionSelect');
+const roundSel     = document.getElementById('roundSelect');
+const slotSel      = document.getElementById('slotSelect');
+const winnerInput  = document.getElementById('winnerInput');
+const suggestions  = document.getElementById('winnerSuggestions');
+const submitBtn    = document.getElementById('submitResult');
+const rescoreBtn   = document.getElementById('rescoreBtn');
+const resultsLog   = document.getElementById('resultsLog');
+const logCount     = document.getElementById('logCount');
+const adminSecret  = document.getElementById('adminSecret');
+
+/* =========================================================
+   REGION → ROUND CASCADE
+   ========================================================= */
+regionSel.addEventListener('change', () => {
+    const region = regionSel.value;
+    roundSel.innerHTML = '<option value="">— Select Round —</option>';
+    slotSel.innerHTML  = '<option value="">— Select Slot —</option>';
+    winnerInput.value  = '';
+
+    roundSel.disabled   = !region;
+    slotSel.disabled    = true;
+    winnerInput.disabled = true;
+    submitBtn.disabled  = true;
+
+    if (!region) return;
+    (ROUND_OPTIONS[region] || []).forEach(([val, label]) => {
+        roundSel.innerHTML += `<option value="${val}">${label}</option>`;
+    });
+});
+
+roundSel.addEventListener('change', () => {
+    const roundId = roundSel.value;
+    slotSel.innerHTML = '<option value="">— Select Slot —</option>';
+    winnerInput.value = '';
+    slotSel.disabled    = !roundId;
+    winnerInput.disabled = true;
+    submitBtn.disabled  = true;
+
+    if (!roundId) return;
+    const count = getSlotsForRound(roundId);
+    for (let i = 0; i < count; i++) {
+        slotSel.innerHTML += `<option value="${i}">Game ${i + 1} (slot ${i})</option>`;
+    }
+});
+
+slotSel.addEventListener('change', () => {
+    const hasSlot = slotSel.value !== '';
+    winnerInput.disabled = !hasSlot;
+    checkReady();
+});
+
+winnerInput.addEventListener('input', () => {
+    showSuggestions(winnerInput.value);
+    checkReady();
+});
+
+winnerInput.addEventListener('blur', () => {
+    setTimeout(() => suggestions.classList.remove('open'), 150);
+});
+
+function checkReady() {
+    submitBtn.disabled = !(
+        regionSel.value &&
+        roundSel.value &&
+        slotSel.value !== '' &&
+        winnerInput.value.trim().length > 1 &&
+        adminSecret.value.trim().length > 0
+    );
+}
+
+adminSecret.addEventListener('input', checkReady);
+
+/* =========================================================
+   AUTOCOMPLETE
+   ========================================================= */
+function showSuggestions(query) {
+    if (!query || query.length < 2) {
+        suggestions.classList.remove('open');
+        return;
+    }
+    const q = query.toLowerCase();
+    const matches = TEAMS.filter(t => t.name.toLowerCase().includes(q)).slice(0, 8);
+
+    if (!matches.length) { suggestions.classList.remove('open'); return; }
+
+    suggestions.innerHTML = matches.map(t =>
+        `<div class="suggestion-item" data-name="${t.name}">
+            <span class="suggestion-seed">${t.seed}</span>
+            <span>${t.name}</span>
+         </div>`
+    ).join('');
+    suggestions.classList.add('open');
+
+    suggestions.querySelectorAll('.suggestion-item').forEach(el => {
+        el.addEventListener('mousedown', () => {
+            winnerInput.value = el.getAttribute('data-name');
+            suggestions.classList.remove('open');
+            checkReady();
+        });
+    });
+}
+
+/* =========================================================
+   SUBMIT RESULT
+   ========================================================= */
+submitBtn.addEventListener('click', async () => {
+    const payload = {
+        round_id:    roundSel.value,
+        slot_index:  parseInt(slotSel.value),
+        winner_name: winnerInput.value.trim()
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
+
+    try {
+        const res = await fetch('/admin/set_result', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Secret': adminSecret.value.trim()
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Server error');
+
+        toast('✓ ' + data.message, 'success');
+        addToLog(payload);
+        updateStats(data);
+
+        // Reset form
+        slotSel.value = '';
+        winnerInput.value = '';
+        slotSel.disabled = true;
+        winnerInput.disabled = true;
+
+    } catch (err) {
+        toast('✗ ' + err.message, 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Result & Rescore All Brackets';
+    }
+});
+
+/* =========================================================
+   MANUAL RESCORE
+   ========================================================= */
+rescoreBtn.addEventListener('click', async () => {
+    rescoreBtn.textContent = '↻ Rescoring…';
+    rescoreBtn.disabled = true;
+
+    try {
+        const res = await fetch('/admin/rescore', {
+            method: 'POST',
+            headers: { 'X-Admin-Secret': adminSecret.value.trim() }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+        toast('✓ All brackets rescored', 'success');
+        updateStats(data);
+    } catch (err) {
+        toast('✗ ' + err.message, 'error');
+    } finally {
+        rescoreBtn.textContent = '↻ Rescore Now';
+        rescoreBtn.disabled = false;
+    }
+});
+
+/* =========================================================
+   LOG
+   ========================================================= */
+function addToLog(entry) {
+    // Replace if same round+slot, else push
+    const idx = loggedResults.findIndex(r =>
+        r.round_id === entry.round_id && r.slot_index === entry.slot_index
+    );
+    if (idx !== -1) loggedResults[idx] = entry;
+    else loggedResults.unshift(entry);
+
+    renderLog();
+    document.getElementById('statResults').textContent = loggedResults.length;
+}
+
+function renderLog() {
+    const filtered = currentFilter === 'all'
+        ? loggedResults
+        : loggedResults.filter(r => r.round_id.includes(currentFilter));
+
+    logCount.textContent = `${loggedResults.length} entr${loggedResults.length === 1 ? 'y' : 'ies'}`;
+
+    if (!filtered.length) {
+        resultsLog.innerHTML = '<div class="log-empty">No results for this round.</div>';
+        return;
+    }
+
+    resultsLog.innerHTML = filtered.map((r, i) => `
+        <div class="log-entry" data-idx="${i}">
+            <span class="log-round">${r.round_id}</span>
+            <span class="log-slot">#${r.slot_index}</span>
+            <span class="log-winner">${r.winner_name}</span>
+            <button class="log-delete" data-round="${r.round_id}" data-slot="${r.slot_index}" title="Remove">✕</button>
+        </div>
+    `).join('');
+
+    resultsLog.querySelectorAll('.log-delete').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const round = btn.getAttribute('data-round');
+            const slot  = parseInt(btn.getAttribute('data-slot'));
+            loggedResults = loggedResults.filter(r =>
+                !(r.round_id === round && r.slot_index === slot)
+            );
+            renderLog();
+            document.getElementById('statResults').textContent = loggedResults.length;
+        });
+    });
+}
+
+/* =========================================================
+   FILTER TABS
+   ========================================================= */
+document.getElementById('roundFilterTabs').addEventListener('click', e => {
+    const tab = e.target.closest('.round-tab');
+    if (!tab) return;
+    document.querySelectorAll('.round-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.getAttribute('data-filter');
+    renderLog();
+});
+
+/* =========================================================
+   STATS UPDATE
+   ========================================================= */
+function updateStats(data) {
+    if (data.brackets_scored !== undefined)
+        document.getElementById('statBrackets').textContent = data.brackets_scored;
+    if (data.top_score !== undefined)
+        document.getElementById('statLeader').textContent = data.top_score;
+
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent =
+        `Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+function toast(msg, type = 'success') {
+    const area = document.getElementById('toastArea');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    area.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+}
+
+/* =========================================================
+   LOAD EXISTING RESULTS ON PAGE LOAD
+   ========================================================= */
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const res = await fetch('/admin/get_results');
+        if (!res.ok) return;
+        const data = await res.json();
+        (data.results || []).forEach(r => loggedResults.push(r));
+        renderLog();
+        document.getElementById('statResults').textContent = loggedResults.length;
+        if (data.brackets_scored !== undefined)
+            document.getElementById('statBrackets').textContent = data.brackets_scored;
+        if (data.top_score !== undefined)
+            document.getElementById('statLeader').textContent = data.top_score;
+    } catch (e) {
+        // silently fail if not logged in yet
+    }
+});
+</script>
+
+</body>
+</html>

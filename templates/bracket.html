@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <title>March Madness Bracket</title>
 
-    <!-- Bracket CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bracket.css') }}">
-    <!-- Site-wide CSS (includes shared navbar) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
-    <!-- Bracket page overrides for the old top-bar (now replaced by site-nav) -->
     <style>
-        /* Bracket controls bar sits below the navbar */
+        /* ── CONTROLS BAR ── */
         .bracket-controls {
             background: #0033a0;
-            color: white;
             padding: 12px 24px;
             display: flex;
             justify-content: space-between;
@@ -22,49 +20,237 @@
             flex-wrap: wrap;
             gap: 10px;
             border-bottom: 3px solid #001f7a;
+            position: relative;
+            z-index: 200;
         }
 
         .bracket-controls h1 {
             margin: 0;
             font-size: 22px;
             color: #fff;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
         }
 
-        .bracket-controls .controls {
+        .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ── STRATEGY TRIGGER BUTTON ── */
+        .strategy-trigger {
             display: flex;
             align-items: center;
             gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .bracket-controls select,
-        .bracket-controls button {
+            background: rgba(255,255,255,0.12);
+            border: 1.5px solid rgba(255,255,255,0.28);
+            border-radius: 8px;
             padding: 8px 14px;
-            font-size: 14px;
-            border-radius: 6px;
-            border: none;
             cursor: pointer;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            transition: background 0.15s, border-color 0.15s;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .strategy-trigger:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .strategy-trigger.open  { background: rgba(255,255,255,0.22); border-color: #fff; }
+
+        .strategy-trigger .chevron {
+            font-size: 9px;
+            opacity: 0.7;
+            transition: transform 0.2s;
+        }
+        .strategy-trigger.open .chevron { transform: rotate(180deg); }
+
+        /* ── DROPDOWN PANEL ── */
+        .strategy-panel {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 480px;
+            background: #0d1a3a;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.65);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+        }
+        .strategy-panel.open {
+            display: block;
+            animation: panelIn 0.17s ease forwards;
+        }
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        .bracket-controls select {
-            background: rgba(255,255,255,0.15);
+        .panel-header {
+            padding: 13px 16px 11px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            font-size: 10px;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* ── STRATEGY CARDS ── */
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px 12px 8px;
+        }
+
+        .strategy-card {
+            background: rgba(255,255,255,0.04);
+            border: 1.5px solid rgba(255,255,255,0.07);
+            border-radius: 10px;
+            padding: 13px 13px 11px;
+            cursor: pointer;
+            transition: background 0.14s, border-color 0.14s, transform 0.1s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .strategy-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+        .strategy-card.selected {
+            background: rgba(77,138,255,0.14);
+            border-color: #4d8aff;
+        }
+
+        /* Simulation spans full width */
+        .strategy-card.wide { grid-column: 1 / -1; }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .card-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+
+        .card-title {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
             color: #fff;
         }
-        .bracket-controls select option { color: #000; }
-
-        .bracket-controls button {
-            background: #fff;
-            color: #0033a0;
-            font-weight: 700;
-            transition: background 0.15s;
+        .card-tag {
+            font-size: 9px;
+            font-family: monospace;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.4);
+            display: inline-block;
+            margin-top: 1px;
         }
-        .bracket-controls button:hover { background: #e0e8ff; }
+        .strategy-card.selected .card-tag {
+            background: rgba(77,138,255,0.2);
+            color: #7ab4ff;
+        }
+        .card-desc {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.4);
+            font-family: 'DM Sans', sans-serif;
+            line-height: 1.5;
+        }
 
+        /* ── PANEL FOOTER ── */
+        .panel-footer {
+            padding: 10px 12px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn-cancel {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 7px;
+            color: rgba(255,255,255,0.55);
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: background 0.15s;
+            width: auto;
+        }
+        .btn-cancel:hover { background: rgba(255,255,255,0.11); }
+
+        .btn-apply {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #0033a0, #0050e0);
+            border: none;
+            border-radius: 7px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: auto;
+        }
+        .btn-apply:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+        .btn-apply:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* ── SUBMIT BUTTON ── */
         #submitBracketButton {
+            padding: 9px 18px;
             background: #f0d060;
             color: #020b1f;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            white-space: nowrap;
         }
-        #submitBracketButton:hover { background: #ffe066; }
+        #submitBracketButton:hover { background: #ffe066; transform: translateY(-1px); }
+
+        /* ── LOADING SPINNER ── */
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── BACKDROP ── */
+        .panel-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: none;
+        }
+        .panel-backdrop.open { display: block; }
+
+        @media (max-width: 600px) {
+            .strategy-panel { width: calc(100vw - 24px); right: -12px; }
+            .strategy-grid  { grid-template-columns: 1fr; }
+            .strategy-card.wide { grid-column: 1; }
+        }
     </style>
 </head>
 <body>
@@ -73,28 +259,13 @@
 <nav class="site-nav">
     <a href="/" class="nav-logo">🏀 MM Bracket</a>
     <div class="nav-links">
-        <a href="/">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">Home</span>
-        </a>
-        <a href="/bracket" class="active">
-            <span class="nav-icon">📋</span>
-            <span class="nav-label">My Bracket</span>
-        </a>
-        <a href="/leaderboard">
-            <span class="nav-icon">🏆</span>
-            <span class="nav-label">Leaderboard</span>
-        </a>
+        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+        <a href="/bracket" class="active"><span class="nav-icon">📋</span><span class="nav-label">My Bracket</span></a>
+        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
         {% if current_user.is_authenticated %}
-        <a href="/logout" class="btn-danger">
-            <span class="nav-icon">🚪</span>
-            <span class="nav-label">Logout</span>
-        </a>
+        <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
         {% else %}
-        <a href="/login">
-            <span class="nav-icon">🔑</span>
-            <span class="nav-label">Login</span>
-        </a>
+        <a href="/login"><span class="nav-icon">🔑</span><span class="nav-label">Login</span></a>
         {% endif %}
     </div>
 </nav>
@@ -102,188 +273,238 @@
 <!-- ========================= BRACKET CONTROLS ========================= -->
 <div class="bracket-controls">
     <h1>March Madness Bracket</h1>
-    <div class="controls">
-        <select id="autofillStrategy">
-            <option value="none">Auto-fill Strategy</option>
-            <option value="simulation">Simulation (Balanced)</option>
-            <option value="chalk">Chalk (Favorites)</option>
-            <option value="random">Random</option>
-        </select>
-        <button id="autofillButton">⚡ Auto-fill</button>
+    <div class="controls-right">
+
+        <!-- STRATEGY PICKER -->
+        <div style="position:relative;">
+            <div class="strategy-trigger" id="strategyTrigger">
+                <span>⚡</span>
+                <span id="triggerLabel">Auto-fill Strategy</span>
+                <span class="chevron">▼</span>
+            </div>
+
+            <div class="panel-backdrop" id="panelBackdrop"></div>
+
+            <div class="strategy-panel" id="strategyPanel">
+                <div class="panel-header">Choose an auto-fill strategy</div>
+
+                <div class="strategy-grid">
+
+                    <div class="strategy-card"
+                         data-strategy="chalk"
+                         data-label="Chalk">
+                        <div class="card-top">
+                            <span class="card-icon">🏅</span>
+                            <div>
+                                <div class="card-title">Chalk</div>
+                                <span class="card-tag">always favorites</span>
+                            </div>
+                        </div>
+                        <div class="card-desc">Lower seed wins every matchup. Safe, predictable, statistically decent.</div>
+                    </div>
+
+                    <div class="strategy-card"
+                         data-strategy="random"
+                         data-label="Random">
+                        <div class="card-top">
+                            <span class="card-icon">🎲</span>
+                            <div>
+                                <div class="card-title">Random</div>
+                                <span class="card-tag">pure chaos</span>
+                            </div>
+                        </div>
+                        <div class="card-desc">Completely random picks. Gloriously irresponsible.</div>
+                    </div>
+
+                    <div class="strategy-card"
+                         data-strategy="probabilistic (by seed)"
+                         data-label="Probabilistic">
+                        <div class="card-top">
+                            <span class="card-icon">📊</span>
+                            <div>
+                                <div class="card-title">Probabilistic</div>
+                                <span class="card-tag">by seed history</span>
+                            </div>
+                        </div>
+                        <div class="card-desc">Historical seed win-rates drive every pick. Upsets happen at real-world frequencies.</div>
+                    </div>
+
+                    <div class="strategy-card"
+                         data-strategy="by ranking"
+                         data-label="By Ranking">
+                        <div class="card-top">
+                            <span class="card-icon">📈</span>
+                            <div>
+                                <div class="card-title">By Ranking</div>
+                                <span class="card-tag">team strength</span>
+                            </div>
+                        </div>
+                        <div class="card-desc">Uses 2025 team strength ratings to pick winners. Data-driven upset hunting.</div>
+                    </div>
+
+                    <div class="strategy-card wide"
+                         data-strategy="simulation"
+                         data-label="Simulation">
+                        <div class="card-top">
+                            <span class="card-icon">🧠</span>
+                            <div>
+                                <div class="card-title">Simulation</div>
+                                <span class="card-tag">balanced model</span>
+                            </div>
+                        </div>
+                        <div class="card-desc">Blends team strength ratings with historical seed probabilities for a balanced, realistic bracket.</div>
+                    </div>
+
+                </div>
+
+                <div class="panel-footer">
+                    <button class="btn-cancel" id="panelCancel">Cancel</button>
+                    <button class="btn-apply" id="panelApply" disabled>
+                        <span id="applyLabel">⚡ Auto-fill</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <button id="submitBracketButton">✅ Submit Bracket</button>
     </div>
 </div>
 
+<!-- ========================= BRACKET ========================= -->
 <div id="bracketContainer">
 
-    <!-- ========================= -->
-    <!--        LEFT SIDE          -->
-    <!-- ========================= -->
     <div class="side left-side">
 
-        <!-- WEST REGION -->
         <div class="region">
             <h2 class="region-title">West</h2>
-
-            <div class="round round-64">
-                <h3>Round of 64</h3>
-                <div class="matchups" id="west_r64">
-                    <!-- JS will insert matchups here -->
-                </div>
-            </div>
-
-            <div class="round round-32">
-                <h3>Round of 32</h3>
-                <div class="matchups" id="west_r32"></div>
-            </div>
-
-            <div class="round sweet-16">
-                <h3>Sweet 16</h3>
-                <div class="matchups" id="west_s16"></div>
-            </div>
-
-            <div class="round elite-8">
-                <h3>Elite 8</h3>
-                <div class="matchups" id="west_e8"></div>
-            </div>
+            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="west_r64"></div></div>
+            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="west_r32"></div></div>
+            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="west_s16"></div></div>
+            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="west_e8"></div></div>
         </div>
 
-        <!-- SOUTH REGION -->
         <div class="region">
             <h2 class="region-title">South</h2>
-
-            <div class="round round-64">
-                <h3>Round of 64</h3>
-                <div class="matchups" id="south_r64"></div>
-            </div>
-
-            <div class="round round-32">
-                <h3>Round of 32</h3>
-                <div class="matchups" id="south_r32"></div>
-            </div>
-
-            <div class="round sweet-16">
-                <h3>Sweet 16</h3>
-                <div class="matchups" id="south_s16"></div>
-            </div>
-
-            <div class="round elite-8">
-                <h3>Elite 8</h3>
-                <div class="matchups" id="south_e8"></div>
-            </div>
+            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="south_r64"></div></div>
+            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="south_r32"></div></div>
+            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="south_s16"></div></div>
+            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="south_e8"></div></div>
         </div>
 
     </div>
 
-    <!-- ========================= -->
-    <!--      FINAL FOUR AREA      -->
-    <!-- ========================= -->
     <div class="final-four-area">
-
         <div class="final-four">
             <h2>Final Four</h2>
-
             <div class="matchups" id="ff_left"></div>
             <div class="matchups" id="ff_right"></div>
         </div>
-
         <div class="championship">
             <h2>Championship</h2>
             <div class="matchups" id="championship"></div>
         </div>
-
         <div class="national-champion">
             <h2>National Champion</h2>
             <div class="champion" id="champion"></div>
         </div>
-
     </div>
 
-    <!-- ========================= -->
-    <!--        RIGHT SIDE         -->
-    <!-- ========================= -->
     <div class="side right-side">
 
-        <!-- EAST REGION -->
         <div class="region">
             <h2 class="region-title">East</h2>
-
-            <div class="round round-64">
-                <h3>Round of 64</h3>
-                <div class="matchups" id="east_r64"></div>
-            </div>
-
-            <div class="round round-32">
-                <h3>Round of 32</h3>
-                <div class="matchups" id="east_r32"></div>
-            </div>
-
-            <div class="round sweet-16">
-                <h3>Sweet 16</h3>
-                <div class="matchups" id="east_s16"></div>
-            </div>
-
-            <div class="round elite-8">
-                <h3>Elite 8</h3>
-                <div class="matchups" id="east_e8"></div>
-            </div>
+            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="east_r64"></div></div>
+            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="east_r32"></div></div>
+            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="east_s16"></div></div>
+            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="east_e8"></div></div>
         </div>
 
-        <!-- MIDWEST REGION -->
         <div class="region">
             <h2 class="region-title">Midwest</h2>
-
-            <div class="round round-64">
-                <h3>Round of 64</h3>
-                <div class="matchups" id="midwest_r64"></div>
-            </div>
-
-            <div class="round round-32">
-                <h3>Round of 32</h3>
-                <div class="matchups" id="midwest_r32"></div>
-            </div>
-
-            <div class="round sweet-16">
-                <h3>Sweet 16</h3>
-                <div class="matchups" id="midwest_s16"></div>
-            </div>
-
-            <div class="round elite-8">
-                <h3>Elite 8</h3>
-                <div class="matchups" id="midwest_e8"></div>
-            </div>
+            <div class="round round-64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64"></div></div>
+            <div class="round round-32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32"></div></div>
+            <div class="round sweet-16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16"></div></div>
+            <div class="round elite-8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8"></div></div>
         </div>
 
     </div>
 
 </div>
 
-<!-- ========================= -->
-<!--        JAVASCRIPT         -->
-<!-- ========================= -->
+<!-- ========================= JS ========================= -->
 <script src="{{ url_for('static', filename='js/bracket.js') }}"></script>
 <script src="{{ url_for('static', filename='js/autofill.js') }}"></script>
 
 <script>
-    // Load teams on page load
+    /* ── INITIAL TEAM LOAD ── */
     const initialTeams = {{ teams | tojson }};
-    document.addEventListener("DOMContentLoaded", function () {
-        loadInitialTeams(initialTeams);
+    document.addEventListener("DOMContentLoaded", () => loadInitialTeams(initialTeams));
+
+    /* ── STATE ── */
+    let selectedStrategy = null;
+
+    /* ── DOM REFS ── */
+    const trigger      = document.getElementById('strategyTrigger');
+    const panel        = document.getElementById('strategyPanel');
+    const backdrop     = document.getElementById('panelBackdrop');
+    const applyBtn     = document.getElementById('panelApply');
+    const cancelBtn    = document.getElementById('panelCancel');
+    const applyLabel   = document.getElementById('applyLabel');
+    const triggerLabel = document.getElementById('triggerLabel');
+
+    /* ── OPEN / CLOSE ── */
+    trigger.addEventListener('click', () => togglePanel());
+    backdrop.addEventListener('click', closePanel);
+    cancelBtn.addEventListener('click', closePanel);
+
+    function togglePanel() {
+        const isOpen = panel.classList.contains('open');
+        isOpen ? closePanel() : openPanel();
+    }
+
+    function openPanel() {
+        panel.classList.add('open');
+        backdrop.classList.add('open');
+        trigger.classList.add('open');
+    }
+
+    function closePanel() {
+        panel.classList.remove('open');
+        backdrop.classList.remove('open');
+        trigger.classList.remove('open');
+    }
+
+    /* ── CARD SELECTION ── */
+    document.querySelectorAll('.strategy-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedStrategy = card.getAttribute('data-strategy');
+            applyBtn.disabled = false;
+        });
     });
 
-    // Autofill button
-    document.getElementById('autofillButton').addEventListener('click', function () {
-        const strat = document.getElementById('autofillStrategy').value;
+    /* ── APPLY: run autofill then close ── */
+    applyBtn.addEventListener('click', () => {
+        if (!selectedStrategy) return;
+        closePanel();
+        runAutofill(selectedStrategy);
+    });
 
-        if (strat === "none") {
-            alert("Choose a strategy first");
-            return;
-        }
+    /* ── AUTOFILL FETCH ── */
+    function runAutofill(strategy) {
+        // Update trigger label to show chosen strategy
+        const card = document.querySelector(`.strategy-card[data-strategy="${strategy}"]`);
+        if (card) triggerLabel.textContent = card.getAttribute('data-label');
+
+        // Show loading state on the trigger
+        trigger.innerHTML = `<span class="spinner"></span> <span>Filling…</span>`;
+        trigger.style.pointerEvents = 'none';
 
         fetch("/autofill_bracket", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ strategy: strat })
+            body: JSON.stringify({ strategy })
         })
         .then(res => {
             if (!res.ok) throw new Error("Server error: " + res.status);
@@ -295,22 +516,27 @@
         .catch(err => {
             console.error("Autofill failed:", err);
             alert("Autofill failed. Check the console for details.");
+        })
+        .finally(() => {
+            // Restore trigger
+            trigger.innerHTML = `
+                <span>⚡</span>
+                <span id="triggerLabel">${card ? card.getAttribute('data-label') : 'Auto-fill Strategy'}</span>
+                <span class="chevron">▼</span>`;
+            trigger.style.pointerEvents = '';
         });
-    });
+    }
 
-    // Submit button
+    /* ── SUBMIT BRACKET ── */
     document.getElementById('submitBracketButton').addEventListener('click', function () {
         const bracketData = buildBracketJSON();
-
         fetch("/submit_bracket", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ bracket: bracketData })
         })
         .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error);
-        })
+        .then(data => alert(data.message || data.error))
         .catch(err => {
             console.error("Submit failed:", err);
             alert("Submission failed. Try again.");
