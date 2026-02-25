@@ -439,7 +439,7 @@ def random_probabilistic_bracket():
 
         for round_idx, round_key in enumerate(round_id_keys):
             container_id = round_id_map[round_key]
-            round_prob_col = past.columns[round_idx]  # match column like "Round of 64"
+            round_prob_col = past.columns[round_idx]  # column like "Round of 64"
             team_entries = []
             winners = []
 
@@ -453,18 +453,20 @@ def random_probabilistic_bracket():
                 team_entries.append({"seed": int(t1['Seed']), "name": t1['team_names']})
                 team_entries.append({"seed": int(t2['Seed']), "name": t2['team_names']})
 
-                # Get historical counts
+                # Get historical counts summed across all tournaments
                 try:
-                    count1 = past.loc[past['Seed'] == t1['Seed'], round_prob_col].iloc[0]
-                    count2 = past.loc[past['Seed'] == t2['Seed'], round_prob_col].iloc[0]
-                    # Compute probability based on counts
+                    count1 = past.loc[past['Seed'] == t1['Seed'], round_prob_col].sum()
+                    count2 = past.loc[past['Seed'] == t2['Seed'], round_prob_col].sum()
+                    # Compute probability of t1 winning
                     p_win_t1 = count1 / (count1 + count2) if (count1 + count2) > 0 else 0.5
                 except (IndexError, KeyError):
                     p_win_t1 = 0.5
 
+                # Randomly select winner based on probability
                 winner = t1 if np.random.rand() < p_win_t1 else t2
                 winners.append(winner)
 
+            # Store results for this round
             result[container_id] = team_entries
             current_teams = winners
 
@@ -479,11 +481,12 @@ def random_probabilistic_bracket():
     result["ff_left"]  = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_left_teams]
     result["ff_right"] = [{"seed": int(t['Seed']), "name": t['team_names']} for t in ff_right_teams]
 
-    # Final Four games (still random 50/50 for now)
+    # Final Four games (you can later also weight these by historical counts)
     ff_winners = []
     for ff_teams in [ff_left_teams, ff_right_teams]:
         if len(ff_teams) == 2:
             t1, t2 = ff_teams
+            # Use equal probability for Final Four / Championship
             ff_winners.append(t1 if np.random.rand() < 0.5 else t2)
 
     # Championship game
