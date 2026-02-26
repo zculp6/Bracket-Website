@@ -176,8 +176,94 @@ function getNextSlot(matchupElem) {
 }
 
 /* =========================================================
+   REMOVE A TEAM FROM A SPECIFIC SLOT IN A MATCHUP CONTAINER
+   Replaces it with a blank placeholder. Used during cascade removal.
+   ========================================================= */
+function removeTeamFromSlot(containerId, slotIndex, teamSlot) {
+    if (containerId === "champion_display") {
+        const el = document.getElementById("champion");
+        if (el) el.innerText = "";
+        return;
+    }
+
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const matchups = container.querySelectorAll(":scope > .matchup");
+    if (matchups.length <= slotIndex) return;
+
+    const targetMatchup = matchups[slotIndex];
+    const existingTeams = targetMatchup.querySelectorAll(":scope > .team");
+    const teamEl = existingTeams[teamSlot];
+    if (!teamEl || teamEl.classList.contains("team-placeholder")) return;
+
+    // Replace with blank placeholder
+    const blank = document.createElement("div");
+    blank.className = "team team-placeholder";
+    blank.setAttribute("data-seed", "");
+    blank.setAttribute("data-name", "");
+    blank.innerHTML = `<span class="seed"></span><span class="team-name">TBD</span>`;
+    targetMatchup.replaceChild(blank, teamEl);
+}
+
+/* =========================================================
+   CASCADE REMOVE A TEAM FROM ALL DOWNSTREAM ROUNDS
+   Walks forward from a given slot, removing the specified team
+   name wherever it appears as a winner in subsequent rounds.
+   Also clears selected/eliminated state in the matchup where
+   it was removed, so the other team is no longer "eliminated".
+   ========================================================= */
+function cascadeRemove(teamName, containerId, slotIndex, teamSlot) {
+    if (!teamName) return;
+
+    // Remove from the next-round slot
+    removeTeamFromSlot(containerId, slotIndex, teamSlot);
+
+    // Check if the team had won from this next-round matchup too —
+    // i.e. was it selected in the matchup we just blanked? If so,
+    // also un-eliminate the other team in that matchup, and recurse.
+    if (containerId === "champion_display") return;
+
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const matchups = container.querySelectorAll(":scope > .matchup");
+    if (matchups.length <= slotIndex) return;
+
+    const targetMatchup = matchups[slotIndex];
+
+    // Was this team selected (winner) in this matchup?
+    // After removal above it's now a placeholder, so check by name before removal.
+    // We detect this by checking if the OTHER team in this matchup is "eliminated" —
+    // meaning teamName was the selected winner here.
+    const teams = targetMatchup.querySelectorAll(":scope > .team");
+    const otherTeam = Array.from(teams).find(t =>
+        t.getAttribute("data-name") !== teamName &&
+        !t.classList.contains("team-placeholder")
+    );
+
+    // Check if teamName was the winner of this matchup by seeing if it was selected
+    // We need to check the slot we just blanked — but since we already replaced it,
+    // detect by checking if any remaining team is "eliminated" (means teamName was selected)
+    const hasEliminated = Array.from(teams).some(t => t.classList.contains("eliminated"));
+
+    if (hasEliminated) {
+        // teamName was the winner here — un-eliminate the other team
+        teams.forEach(t => t.classList.remove("eliminated", "selected"));
+
+        // Find what the next slot for this matchup would be, and recurse
+        const fakeMatchup = targetMatchup; // use it to compute next slot
+        const nextSlot = getNextSlot(fakeMatchup);
+        if (nextSlot) {
+            cascadeRemove(teamName, nextSlot.nextContainerId, nextSlot.slotIndex, nextSlot.teamSlot);
+        }
+    }
+}
+
+/* =========================================================
    ADVANCE WINNER TO NEXT ROUND
-   Replaces the placeholder in the pre-filled matchup slot.
+   Before placing the new winner, cascades-removes the old one
+   from all downstream rounds so stale picks are cleaned up.
    ========================================================= */
 function advanceTeam(matchupElem, teamObj) {
     const next = getNextSlot(matchupElem);
@@ -195,18 +281,38 @@ function advanceTeam(matchupElem, teamObj) {
     if (!nextContainer) return;
 
     const matchups = nextContainer.querySelectorAll(":scope > .matchup");
-    if (matchups.length <= slotIndex) return; // should never happen with pre-filled blanks
+    if (matchups.length <= slotIndex) return;
 
     const targetMatchup = matchups[slotIndex];
+    const existingTeams = targetMatchup.querySelectorAll(":scope > .team");
 
+    // Find the team currently in this slot (could be a prior winner to evict)
+    const existingInSlot = existingTeams[teamSlot];
+    const evictedName = existingInSlot && !existingInSlot.classList.contains("team-placeholder")
+        ? existingInSlot.getAttribute("data-name")
+        : null;
+
+    // If there was a different team here, cascade-remove it from all downstream rounds
+    if (evictedName && evictedName !== teamObj.name) {
+        // Find what next slot the evicted team would have advanced to from this matchup
+        const evictedNextSlot = getNextSlot(targetMatchup);
+        if (evictedNextSlot) {
+            cascadeRemove(evictedName, evictedNextSlot.nextContainerId, evictedNextSlot.slotIndex, evictedNextSlot.teamSlot);
+        }
+        // Also clear champion if it was this team
+        const champDiv = document.getElementById("champion");
+        if (champDiv && champDiv.innerText.includes(evictedName)) {
+            champDiv.innerText = "";
+        }
+    }
+
+    // Place the new winner into the slot
     const newTeamEl = document.createElement("div");
     newTeamEl.className = "team";
     newTeamEl.setAttribute("data-seed", teamObj.seed);
     newTeamEl.setAttribute("data-name", teamObj.name);
     newTeamEl.innerHTML = `<span class="seed">${teamObj.seed}</span>
                            <span class="team-name">${teamObj.name}</span>`;
-
-    const existingTeams = targetMatchup.querySelectorAll(":scope > .team");
 
     if (teamSlot === 0) {
         if (existingTeams[0]) {
