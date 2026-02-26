@@ -209,18 +209,32 @@ body {
 /* =======================
    PLACEHOLDER / TBD SLOTS
    Shown in downstream rounds before a team has advanced.
+   Both-placeholder matchups are fully invisible.
+   One-real-team matchups keep their border.
    =======================*/
 
 .team.team-placeholder {
-    color: #bbb;
-    font-style: italic;
+    color: transparent;
     cursor: default;
     pointer-events: none;
-    background: #fafafa;
+    background: transparent;
 }
 
 .team.team-placeholder:hover {
-    background: #fafafa;
+    background: transparent;
+}
+
+/* Hide the matchup box entirely when both slots are still TBD */
+.matchup:has(> .team-placeholder + .team-placeholder) {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Restore border when one real team has arrived */
+.matchup:has(> .team:not(.team-placeholder)):has(> .team-placeholder) {
+    border-color: #ccc;
+    background: white;
 }
 
 /* =======================
