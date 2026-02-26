@@ -27,8 +27,8 @@ function createBlankTeamRow() {
    layout never collapses while teams are being picked.
    ========================================================= */
 function preFillBlankMatchups() {
-    // Regional rounds: r32=8 matchups, s16=4, e8=2
-    const roundCounts = { r32: 8, s16: 4, e8: 2 };
+    // Regional rounds: r32=4 matchups, s16=2, e8=1
+    const roundCounts = { r32: 4, s16: 2, e8: 1 };
     ["west", "south", "east", "midwest"].forEach(region => {
         Object.entries(roundCounts).forEach(([round, count]) => {
             const container = document.getElementById(`${region}_${round}`);
