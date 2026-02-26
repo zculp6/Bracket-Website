@@ -280,51 +280,35 @@ const CONTAINERS = [
 ];
 
 /* ── Build the set of teams that are "busted" ────────────────────────────
-   A team is busted if the user picked them to win a slot but the real
-   result shows a different winner for that slot.
-   We look at which team the user advanced out of each matchup, then check
-   if trueResults agrees. If not — that user pick is busted.               */
+   A team is busted if they were eliminated in real life (lost a real game)
+   but the user had them advancing further in their bracket.
+   We scan only R64 (the first round) to find real losers, since every
+   team that loses in real life first loses in R64 or their earliest round.
+   More precisely: for every completed real game, the loser = the team in
+   that slot's pair who is NOT the real winner. Add them to busted.         */
 function buildBustedTeams(data) {
     const busted = new Set();
 
+    // Only look at rounds where trueResults exist (games actually played)
     CONTAINERS.forEach(cid => {
         const realWinners = trueResults[cid];
-        if (!realWinners || !realWinners.length) return; // round not played yet
+        if (!realWinners || !realWinners.length) return;
 
         const teams = data[cid];
         if (!teams || !teams.length) return;
 
-        // Figure out which teams the user advanced out of this round
-        // by checking which names appear in the NEXT round's data
-        const userAdvanced = new Set();
-        ROUND_ORDER.filter(([c]) => c === cid).forEach(([, nxt]) => {
-            (data[nxt] || []).forEach(t => {
-                const name = typeof t === 'string' ? t : (t && t.name);
-                if (name) userAdvanced.add(name);
-            });
-        });
-        if (cid === 'championship' && data.champion) {
-            userAdvanced.add(data.champion);
-        }
-
-        // For each slot, if the user advanced a team but the real winner
-        // is different, that user pick is busted
         for (let i = 0; i + 1 < teams.length; i += 2) {
             const slotIndex = i / 2;
             const realWinner = realWinners[slotIndex];
-            if (!realWinner) continue; // game not played yet
+            if (!realWinner) continue; // game not yet played
 
             const t1 = teams[i], t2 = teams[i + 1];
             const n1 = typeof t1 === 'string' ? t1 : (t1 && t1.name);
             const n2 = typeof t2 === 'string' ? t2 : (t2 && t2.name);
 
-            // The user's pick for this slot
-            const userPick = userAdvanced.has(n1) ? n1 : userAdvanced.has(n2) ? n2 : null;
-
-            // If the user picked someone but the real winner is different → busted
-            if (userPick && userPick !== realWinner) {
-                busted.add(userPick);
-            }
+            // The real loser of this game is busted
+            if (n1 && n1 !== realWinner) busted.add(n1);
+            if (n2 && n2 !== realWinner) busted.add(n2);
         }
     });
 
@@ -345,10 +329,11 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams) {
         check2 = correct && n2 === userPick;
     }
 
-    // Add busted class if the team was picked to win here but is already
-    // eliminated in real life (lost in an earlier or current round)
-    if (w1 && bustedTeams.has(n1)) c1 += ' busted';
-    if (w2 && bustedTeams.has(n2)) c2 += ' busted';
+    // A busted team should be struck through in EVERY round they appear —
+    // both the round they were eliminated and all rounds after where the
+    // user had them advancing as a ghost pick.
+    if (bustedTeams.has(n1)) c1 += ' busted';
+    if (bustedTeams.has(n2)) c2 += ' busted';
 
     return { c1, c2, check1, check2 };
 }
