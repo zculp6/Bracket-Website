@@ -146,9 +146,10 @@
 <nav class="site-nav">
     <a href="/" class="nav-logo">🏀 MM Bracket</a>
     <div class="nav-links">
+        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
         <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
         {% if current_user.is_authenticated %}
-        <a href="/my_brackets" class="active"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        <a href="/my_brackets"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
         {% endif %}
         <span class="nav-divider"></span>
         <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
