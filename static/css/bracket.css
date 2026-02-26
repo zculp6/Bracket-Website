@@ -166,12 +166,48 @@ body {
     gap: 8px;
 }
 
+/* .matchup fills its flex space but is fully transparent —
+   no border, no background. It just positions the team rows. */
 .matchup {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 120px;
+    background: transparent;
+    border: none;
+    overflow: visible;
+}
+
+/* Tight visible box drawn only around the team rows */
+.matchup .team {
+    background: white;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    border-top: none;
+    border-bottom: none;
+}
+
+.matchup .team:first-child {
+    border-top: 1px solid #ccc;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.matchup .team:last-child {
+    border-bottom: 1px solid #ccc;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+/* Hairline divider between the two team rows */
+.matchup .team + .team {
+    border-top: 1px solid #e8e8e8;
+}
+
+/* Single visible team only */
+.matchup .team:only-child {
     border: 1px solid #ccc;
     border-radius: 6px;
-    background: white;
-    overflow: hidden;
-    min-width: 120px;
 }
 
 /* =======================
@@ -209,31 +245,27 @@ body {
 /* =======================
    PLACEHOLDER / TBD SLOTS
    Shown in downstream rounds before a team has advanced.
-   Both-placeholder matchups are fully invisible.
-   One-real-team matchups keep their border.
+   Placeholder rows are fully invisible — they hold space but show nothing.
    =======================*/
 
 .team.team-placeholder {
     color: transparent;
     cursor: default;
     pointer-events: none;
-    background: transparent;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
 }
 
 .team.team-placeholder:hover {
-    background: transparent;
+    background: transparent !important;
 }
 
-/* Hide the matchup box entirely when both slots are still TBD */
-.matchup:has(> .team-placeholder + .team-placeholder) {
-    border-color: transparent;
-    background: transparent;
-    box-shadow: none;
-}
-
-/* Restore border when one real team has arrived */
-.matchup:has(> .team:not(.team-placeholder)):has(> .team-placeholder) {
-    border-color: #ccc;
+/* When a matchup has one real team + one placeholder,
+   make the real team's box fully self-contained with rounded corners on all sides */
+.matchup:has(.team-placeholder) .team:not(.team-placeholder) {
+    border: 1px solid #ccc !important;
+    border-radius: 6px !important;
     background: white;
 }
 
