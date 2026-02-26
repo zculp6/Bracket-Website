@@ -279,52 +279,80 @@ const CONTAINERS = [
     "ff_left","ff_right","championship"
 ];
 
+/* ── Round depth index for ordering ──────────────────────────────────── */
+const ROUND_DEPTH = {
+    "west_r64": 0, "south_r64": 0, "east_r64": 0, "midwest_r64": 0,
+    "west_r32": 1, "south_r32": 1, "east_r32": 1, "midwest_r32": 1,
+    "west_s16": 2, "south_s16": 2, "east_s16": 2, "midwest_s16": 2,
+    "west_e8":  3, "south_e8":  3, "east_e8":  3, "midwest_e8":  3,
+    "ff_left":  4, "ff_right":  4,
+    "championship": 5,
+};
+
 /* ── Build the set of teams that are "busted" ────────────────────────────
-   A team is busted if the user picked them to win a slot but the real
-   result shows a different winner for that slot.
-   We look at which team the user advanced out of each matchup, then check
-   if trueResults agrees. If not — that user pick is busted.               */
+   A team is busted if they lost in real life EARLIER than the user
+   predicted. Only then do they get a strikethrough.
+   Returns a Map: teamName → depth at which they actually lost.
+   The strikethrough is shown in rounds at that depth and later.           */
 function buildBustedTeams(data) {
-    const busted = new Set();
+    // Step 1: find the real round each team lost in
+    const realLostAt = new Map(); // name → ROUND_DEPTH of loss
 
     CONTAINERS.forEach(cid => {
         const realWinners = trueResults[cid];
-        if (!realWinners || !realWinners.length) return; // round not played yet
+        if (!realWinners || !realWinners.length) return;
 
         const teams = data[cid];
         if (!teams || !teams.length) return;
 
-        // Figure out which teams the user advanced out of this round
-        // by checking which names appear in the NEXT round's data
-        const userAdvanced = new Set();
-        ROUND_ORDER.filter(([c]) => c === cid).forEach(([, nxt]) => {
-            (data[nxt] || []).forEach(t => {
-                const name = typeof t === 'string' ? t : (t && t.name);
-                if (name) userAdvanced.add(name);
-            });
-        });
-        if (cid === 'championship' && data.champion) {
-            userAdvanced.add(data.champion);
-        }
+        const depth = ROUND_DEPTH[cid];
+        if (depth === undefined) return;
 
-        // For each slot, if the user advanced a team but the real winner
-        // is different, that user pick is busted
         for (let i = 0; i + 1 < teams.length; i += 2) {
             const slotIndex = i / 2;
             const realWinner = realWinners[slotIndex];
-            if (!realWinner) continue; // game not played yet
+            if (!realWinner) continue;
 
             const t1 = teams[i], t2 = teams[i + 1];
             const n1 = typeof t1 === 'string' ? t1 : (t1 && t1.name);
             const n2 = typeof t2 === 'string' ? t2 : (t2 && t2.name);
 
-            // The user's pick for this slot
-            const userPick = userAdvanced.has(n1) ? n1 : userAdvanced.has(n2) ? n2 : null;
+            if (n1 && n1 !== realWinner && !realLostAt.has(n1)) realLostAt.set(n1, depth);
+            if (n2 && n2 !== realWinner && !realLostAt.has(n2)) realLostAt.set(n2, depth);
+        }
+    });
 
-            // If the user picked someone but the real winner is different → busted
-            if (userPick && userPick !== realWinner) {
-                busted.add(userPick);
+    // Step 2: find the last round the user had each team (their predicted exit)
+    const userLastRound = new Map(); // name → max ROUND_DEPTH user had them
+
+    CONTAINERS.forEach(cid => {
+        const depth = ROUND_DEPTH[cid];
+        if (depth === undefined) return;
+        const teams = data[cid];
+        if (!teams || !teams.length) return;
+        teams.forEach(t => {
+            const name = typeof t === 'string' ? t : (t && t.name);
+            if (!name) return;
+            if (!userLastRound.has(name) || depth > userLastRound.get(name)) {
+                userLastRound.set(name, depth);
             }
+        });
+    });
+    if (data.champion) {
+        const name = data.champion;
+        const d = 6; // champion is beyond championship
+        if (!userLastRound.has(name) || d > userLastRound.get(name)) {
+            userLastRound.set(name, d);
+        }
+    }
+
+    // Step 3: busted = team lost earlier than user predicted
+    // Returns Map: name → depth they actually lost (for use in rendering)
+    const busted = new Map();
+    realLostAt.forEach((lostDepth, name) => {
+        const userDepth = userLastRound.get(name) ?? lostDepth;
+        if (lostDepth < userDepth) {
+            busted.set(name, lostDepth);
         }
     });
 
@@ -345,10 +373,12 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams) {
         check2 = correct && n2 === userPick;
     }
 
-    // Add busted class if the team was picked to win here but is already
-    // eliminated in real life (lost in an earlier or current round)
-    if (w1 && bustedTeams.has(n1)) c1 += ' busted';
-    if (w2 && bustedTeams.has(n2)) c2 += ' busted';
+    // Apply busted (strikethrough) only if:
+    // - the team is in bustedTeams (lost earlier than user predicted)
+    // - AND the current round is at or after the round they actually lost
+    const currentDepth = ROUND_DEPTH[cid] ?? -1;
+    if (bustedTeams.has(n1) && currentDepth >= bustedTeams.get(n1)) c1 += ' busted';
+    if (bustedTeams.has(n2) && currentDepth >= bustedTeams.get(n2)) c2 += ' busted';
 
     return { c1, c2, check1, check2 };
 }
@@ -400,7 +430,7 @@ function renderBracket(data, bid) {
     const ch = document.getElementById('champion_' + bid);
     const actualChamp = (trueResults['championship'] || [])[0];
     if (ch && data.champion) {
-        const champBusted = bustedTeams.has(data.champion);
+        const champBusted = bustedTeams.has(data.champion) && 6 >= bustedTeams.get(data.champion);
         const nameHtml = champBusted
             ? `<span class="team-name" style="text-decoration:line-through;opacity:0.6;">${data.champion}</span>`
             : data.champion;
