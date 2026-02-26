@@ -12,6 +12,60 @@ function createTeamRow(seed, name, isSelected = false, isEliminated = false) {
 }
 
 /* =========================================================
+   BLANK PLACEHOLDER ROW
+   ========================================================= */
+function createBlankTeamRow() {
+    return `<div class="team team-placeholder" data-seed="" data-name="">
+                <span class="seed"></span>
+                <span class="team-name">TBD</span>
+            </div>`;
+}
+
+/* =========================================================
+   PRE-FILL DOWNSTREAM ROUNDS WITH BLANK MATCHUPS
+   Ensures bracket structure is always fully present so
+   layout never collapses while teams are being picked.
+   ========================================================= */
+function preFillBlankMatchups() {
+    // Regional rounds: r32=8 matchups, s16=4, e8=2
+    const roundCounts = { r32: 8, s16: 4, e8: 2 };
+    ["west", "south", "east", "midwest"].forEach(region => {
+        Object.entries(roundCounts).forEach(([round, count]) => {
+            const container = document.getElementById(`${region}_${round}`);
+            if (!container) return;
+            container.innerHTML = "";
+            for (let i = 0; i < count; i++) {
+                const div = document.createElement("div");
+                div.className = "matchup";
+                div.innerHTML = createBlankTeamRow() + createBlankTeamRow();
+                container.appendChild(div);
+            }
+        });
+    });
+
+    // Final Four semi-finals (1 matchup each)
+    ["ff_left", "ff_right"].forEach(id => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.innerHTML = "";
+        const div = document.createElement("div");
+        div.className = "matchup";
+        div.innerHTML = createBlankTeamRow() + createBlankTeamRow();
+        container.appendChild(div);
+    });
+
+    // Championship (1 matchup)
+    const champContainer = document.getElementById("championship");
+    if (champContainer) {
+        champContainer.innerHTML = "";
+        const div = document.createElement("div");
+        div.className = "matchup";
+        div.innerHTML = createBlankTeamRow() + createBlankTeamRow();
+        champContainer.appendChild(div);
+    }
+}
+
+/* =========================================================
    LOAD INITIAL ROUND OF 64 TEAMS
    ========================================================= */
 function loadInitialTeams(teamsData) {
@@ -28,6 +82,10 @@ function loadInitialTeams(teamsData) {
             target.appendChild(div);
         }
     });
+
+    // Pre-populate all downstream rounds with blank placeholder matchups
+    preFillBlankMatchups();
+
     attachClickHandlers();
 }
 
@@ -38,6 +96,10 @@ function attachClickHandlers() {
     document.querySelectorAll(".team").forEach(oldTeam => {
         const newTeam = oldTeam.cloneNode(true);
         oldTeam.parentNode.replaceChild(newTeam, oldTeam);
+
+        // Placeholders are not clickable
+        if (newTeam.classList.contains("team-placeholder")) return;
+
         newTeam.addEventListener("click", function () {
             const matchup = this.closest(".matchup");
             if (!matchup) return;
@@ -115,6 +177,7 @@ function getNextSlot(matchupElem) {
 
 /* =========================================================
    ADVANCE WINNER TO NEXT ROUND
+   Replaces the placeholder in the pre-filled matchup slot.
    ========================================================= */
 function advanceTeam(matchupElem, teamObj) {
     const next = getNextSlot(matchupElem);
@@ -131,13 +194,8 @@ function advanceTeam(matchupElem, teamObj) {
     const nextContainer = document.getElementById(nextContainerId);
     if (!nextContainer) return;
 
-    let matchups = nextContainer.querySelectorAll(":scope > .matchup");
-    while (matchups.length <= slotIndex) {
-        const div = document.createElement("div");
-        div.className = "matchup";
-        nextContainer.appendChild(div);
-        matchups = nextContainer.querySelectorAll(":scope > .matchup");
-    }
+    const matchups = nextContainer.querySelectorAll(":scope > .matchup");
+    if (matchups.length <= slotIndex) return; // should never happen with pre-filled blanks
 
     const targetMatchup = matchups[slotIndex];
 
@@ -233,6 +291,7 @@ function autofillBracket(data) {
 /* =========================================================
    BUILD JSON FOR SUBMISSION
    Saves full matchup pairs (both teams) for correct display when viewing brackets.
+   Skips placeholder-only matchups so incomplete rounds aren't saved as blank data.
    ========================================================= */
 function buildBracketJSON() {
     const result = {};
@@ -244,9 +303,13 @@ function buildBracketJSON() {
             const teams = m.querySelectorAll(".team");
             const t1 = teams[0], t2 = teams[1];
             if (t1 && t2) {
+                const n1 = t1.getAttribute("data-name") || "";
+                const n2 = t2.getAttribute("data-name") || "";
+                // Skip matchups where both slots are still placeholders
+                if (!n1 && !n2) return;
                 pairs.push(
-                    { seed: t1.getAttribute("data-seed") || "", name: t1.getAttribute("data-name") || "" },
-                    { seed: t2.getAttribute("data-seed") || "", name: t2.getAttribute("data-name") || "" }
+                    { seed: t1.getAttribute("data-seed") || "", name: n1 },
+                    { seed: t2.getAttribute("data-seed") || "", name: n2 }
                 );
             }
         });

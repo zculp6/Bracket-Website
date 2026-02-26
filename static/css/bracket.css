@@ -207,6 +207,23 @@ body {
 .team-name { font-size: 13px; }
 
 /* =======================
+   PLACEHOLDER / TBD SLOTS
+   Shown in downstream rounds before a team has advanced.
+   =======================*/
+
+.team.team-placeholder {
+    color: #bbb;
+    font-style: italic;
+    cursor: default;
+    pointer-events: none;
+    background: #fafafa;
+}
+
+.team.team-placeholder:hover {
+    background: #fafafa;
+}
+
+/* =======================
    FINAL FOUR TAB
    Left: Semifinal | Center: Championship + Champion below | Right: Semifinal
    =======================*/
