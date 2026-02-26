@@ -259,9 +259,6 @@
 {% endif %}
 
 <!-- ========================= JS ========================= -->
-<!-- Replace the entire <script>...</script> block in BOTH
-     my_brackets.html and view_bracket.html with this. -->
-
 <script>
 const allData = {{ brackets | map(attribute='bracket_data') | list | tojson }};
 const allIds  = {{ brackets | map(attribute='id')           | list | tojson }};
@@ -282,14 +279,11 @@ const CONTAINERS = [
     "ff_left","ff_right","championship"
 ];
 
-/* ── Build the set of teams eliminated in real life ──────────────────────
-   For every completed real-world game, the loser is "busted".
-   trueResults[roundId] = [winner_of_slot_0, winner_of_slot_1, ...]
-   We cross-reference against the bracket data to find the loser of each slot.
-   Since we don't have the full real matchup pairs here, we derive losers by
-   looking at which teams appeared in each round but did NOT win.
-   Strategy: any team that appears in round N's matchups in the bracket data
-   but is NOT in trueResults[roundN] for that slot is a real loser.          */
+/* ── Build the set of teams that are "busted" ────────────────────────────
+   A team is busted if the user picked them to win a slot but the real
+   result shows a different winner for that slot.
+   We look at which team the user advanced out of each matchup, then check
+   if trueResults agrees. If not — that user pick is busted.               */
 function buildBustedTeams(data) {
     const busted = new Set();
 
@@ -300,6 +294,21 @@ function buildBustedTeams(data) {
         const teams = data[cid];
         if (!teams || !teams.length) return;
 
+        // Figure out which teams the user advanced out of this round
+        // by checking which names appear in the NEXT round's data
+        const userAdvanced = new Set();
+        ROUND_ORDER.filter(([c]) => c === cid).forEach(([, nxt]) => {
+            (data[nxt] || []).forEach(t => {
+                const name = typeof t === 'string' ? t : (t && t.name);
+                if (name) userAdvanced.add(name);
+            });
+        });
+        if (cid === 'championship' && data.champion) {
+            userAdvanced.add(data.champion);
+        }
+
+        // For each slot, if the user advanced a team but the real winner
+        // is different, that user pick is busted
         for (let i = 0; i + 1 < teams.length; i += 2) {
             const slotIndex = i / 2;
             const realWinner = realWinners[slotIndex];
@@ -309,9 +318,13 @@ function buildBustedTeams(data) {
             const n1 = typeof t1 === 'string' ? t1 : (t1 && t1.name);
             const n2 = typeof t2 === 'string' ? t2 : (t2 && t2.name);
 
-            // The loser of this real game is busted
-            if (n1 && n1 !== realWinner) busted.add(n1);
-            if (n2 && n2 !== realWinner) busted.add(n2);
+            // The user's pick for this slot
+            const userPick = userAdvanced.has(n1) ? n1 : userAdvanced.has(n2) ? n2 : null;
+
+            // If the user picked someone but the real winner is different → busted
+            if (userPick && userPick !== realWinner) {
+                busted.add(userPick);
+            }
         }
     });
 
