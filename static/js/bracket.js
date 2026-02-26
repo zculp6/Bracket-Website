@@ -289,6 +289,98 @@ function autofillBracket(data) {
 }
 
 /* =========================================================
+   RESET BRACKET
+   Clears all picks and restores the blank placeholder structure.
+   ========================================================= */
+function resetBracket() {
+    if (!confirm("Reset all picks? This cannot be undone.")) return;
+
+    // Re-load R64 teams fresh (clears all selected/eliminated state)
+    if (typeof initialTeams !== 'undefined') {
+        loadInitialTeams(initialTeams);
+    } else {
+        // Fallback: just clear selected/eliminated classes from R64
+        document.querySelectorAll(".team").forEach(t => {
+            t.classList.remove("selected", "eliminated");
+        });
+        preFillBlankMatchups();
+        attachClickHandlers();
+    }
+
+    // Clear champion display
+    const champDiv = document.getElementById("champion");
+    if (champDiv) champDiv.innerText = "";
+}
+
+/* =========================================================
+   VALIDATE ALL PICKS
+   Returns an object: { valid: bool, missing: string[] }
+   Checks every real matchup has a selected winner.
+   ========================================================= */
+function validateAllPicks() {
+    const missing = [];
+
+    const roundLabels = {
+        r64: "Round of 64", r32: "Round of 32",
+        s16: "Sweet 16",    e8:  "Elite 8"
+    };
+    const regionLabels = {
+        west: "West", south: "South", east: "East", midwest: "Midwest"
+    };
+
+    // Regional rounds
+    ["west", "south", "east", "midwest"].forEach(region => {
+        ["r64", "r32", "s16", "e8"].forEach(round => {
+            const container = document.getElementById(`${region}_${round}`);
+            if (!container) return;
+            container.querySelectorAll(":scope > .matchup").forEach((matchup, i) => {
+                // Skip fully blank placeholder matchups
+                const teams = matchup.querySelectorAll(".team");
+                const allBlank = Array.from(teams).every(t => t.classList.contains("team-placeholder"));
+                if (allBlank) return;
+                const hasWinner = matchup.querySelector(".team.selected");
+                if (!hasWinner) {
+                    missing.push(`${regionLabels[region]} — ${roundLabels[round]} (game ${i + 1})`);
+                }
+            });
+        });
+    });
+
+    // Final Four semis
+    ["ff_left", "ff_right"].forEach(id => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.querySelectorAll(":scope > .matchup").forEach(matchup => {
+            const allBlank = Array.from(matchup.querySelectorAll(".team")).every(t => t.classList.contains("team-placeholder"));
+            if (allBlank) return;
+            if (!matchup.querySelector(".team.selected")) {
+                missing.push(`Final Four — ${id === "ff_left" ? "Left Semifinal" : "Right Semifinal"}`);
+            }
+        });
+    });
+
+    // Championship
+    const champContainer = document.getElementById("championship");
+    if (champContainer) {
+        champContainer.querySelectorAll(":scope > .matchup").forEach(matchup => {
+            const allBlank = Array.from(matchup.querySelectorAll(".team")).every(t => t.classList.contains("team-placeholder"));
+            if (allBlank) return;
+            if (!matchup.querySelector(".team.selected")) {
+                missing.push("Championship Game");
+            }
+        });
+    }
+
+    // Champion display
+    const champDiv = document.getElementById("champion");
+    if (champDiv && !champDiv.innerText.trim()) {
+        missing.push("National Champion");
+    }
+
+    return { valid: missing.length === 0, missing };
+}
+
+/* =========================================================
    BUILD JSON FOR SUBMISSION
    Saves full matchup pairs (both teams) for correct display when viewing brackets.
    Skips placeholder-only matchups so incomplete rounds aren't saved as blank data.

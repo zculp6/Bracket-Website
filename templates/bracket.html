@@ -241,6 +241,21 @@
         }
         #submitBracketButton:hover { background: #ffe066; transform: translateY(-1px); }
 
+        #resetBracketButton {
+            padding: 9px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.25);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.85);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        #resetBracketButton:hover { background: rgba(255,255,255,0.2); }
+
         /* ── LOADING SPINNER ── */
         .spinner {
             display: inline-block;
@@ -507,6 +522,7 @@
         </div>
 
         <a href="/my_brackets" class="my-brackets-btn">📋 My Brackets</a>
+        <button id="resetBracketButton">↺ Reset</button>
         <button id="submitBracketButton">✅ Submit Bracket</button>
     </div>
 </div>
@@ -773,10 +789,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalConfirm = document.getElementById('modalConfirm');
 
     document.getElementById('submitBracketButton').addEventListener('click', () => {
+        const { valid, missing } = validateAllPicks();
+        if (!valid) {
+            alert(`Please complete all matchups before submitting.\n\nMissing picks:\n• ${missing.join('\n• ')}`);
+            return;
+        }
         submitModal.classList.add('open');
         nameInput.value = '';
         charCount.textContent = '0';
         nameInput.focus();
+    });
+
+    document.getElementById('resetBracketButton').addEventListener('click', () => {
+        resetBracket();
     });
 
     modalCancel.addEventListener('click', () => submitModal.classList.remove('open'));
