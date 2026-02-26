@@ -114,11 +114,10 @@ def bracket_page():
     return render_template("bracket.html", teams=teams_by_region)
 
 @app.route("/bracket/<int:bracket_id>")
-@login_required
 def view_bracket(bracket_id):
     bracket = Bracket.query.get_or_404(bracket_id)
     true_results = _build_true_results()
-    return render_template("view_bracket.html", bracket=bracket, true_results=true_results)
+    return render_template("view_bracket.html", bracket=[bracket], true_results=true_results)
 
 @app.route("/my_brackets")
 @login_required
