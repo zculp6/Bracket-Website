@@ -239,6 +239,12 @@ body {
 }
 .team.incorrect-actual .team-name { color: #dc2626 !important; }
 
+/* Team was picked to win but is already eliminated in real life */
+.team.busted .team-name {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
 .seed { font-weight: bold; margin-right: 6px; }
 .team-name { font-size: 13px; }
 
