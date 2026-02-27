@@ -124,6 +124,12 @@
             border-color: #0033a0;
         }
 
+        /* ── BUST ACTUAL LABEL ── */
+        .bust-actual {
+            color: #dc2626;
+            margin-left: 4px;
+        }
+
         /* ── EMPTY STATE ── */
         .empty-state { text-align: center; padding: 100px 20px; }
         .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
@@ -154,9 +160,6 @@
         <span class="nav-divider"></span>
         <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
         <a href="/rankings_stats"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
-        <span class="nav-divider"></span>
-        <a href="/help" class="active"><span class="nav-icon">❓</span><span class="nav-label">Help</span></a>
-        <a href="/contact"><span class="nav-icon">✉️</span><span class="nav-label">Contact</span></a>
         <span class="nav-divider"></span>
         {% if current_user.is_authenticated %}
         <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
@@ -263,8 +266,8 @@
 
 <!-- ========================= JS ========================= -->
 <script>
-const allData = {{ brackets | map(attribute='bracket_data') | list | tojson }};
-const allIds  = {{ brackets | map(attribute='id')           | list | tojson }};
+const allData     = {{ brackets | map(attribute='bracket_data') | list | tojson }};
+const allIds      = {{ brackets | map(attribute='id')           | list | tojson }};
 const trueResults = {{ (true_results or {}) | tojson }};
 
 const ROUND_ORDER = [
@@ -282,7 +285,6 @@ const CONTAINERS = [
     "ff_left","ff_right","championship"
 ];
 
-/* ── Round depth index for ordering ──────────────────────────────────── */
 const ROUND_DEPTH = {
     "west_r64": 0, "south_r64": 0, "east_r64": 0, "midwest_r64": 0,
     "west_r32": 1, "south_r32": 1, "east_r32": 1, "midwest_r32": 1,
@@ -299,7 +301,7 @@ const ROUND_DEPTH = {
    The strikethrough is shown in rounds at that depth and later.           */
 function buildBustedTeams(data) {
     // Step 1: find the real round each team lost in
-    const realLostAt = new Map(); // name → ROUND_DEPTH of loss
+    const realLostAt = new Map();
 
     CONTAINERS.forEach(cid => {
         const realWinners = trueResults[cid];
@@ -326,7 +328,7 @@ function buildBustedTeams(data) {
     });
 
     // Step 2: find the last round the user had each team (their predicted exit)
-    const userLastRound = new Map(); // name → max ROUND_DEPTH user had them
+    const userLastRound = new Map();
 
     CONTAINERS.forEach(cid => {
         const depth = ROUND_DEPTH[cid];
@@ -343,14 +345,13 @@ function buildBustedTeams(data) {
     });
     if (data.champion) {
         const name = data.champion;
-        const d = 6; // champion is beyond championship
+        const d = 6;
         if (!userLastRound.has(name) || d > userLastRound.get(name)) {
             userLastRound.set(name, d);
         }
     }
 
     // Step 3: busted = team lost earlier than user predicted
-    // Returns Map: name → depth they actually lost (for use in rendering)
     const busted = new Map();
     realLostAt.forEach((lostDepth, name) => {
         const userDepth = userLastRound.get(name) ?? lostDepth;
@@ -376,14 +377,17 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams) {
         check2 = correct && n2 === userPick;
     }
 
-    // Apply busted (strikethrough) only if:
-    // - the team is in bustedTeams (lost earlier than user predicted)
-    // - AND the current round is at or after the round they actually lost
     const currentDepth = ROUND_DEPTH[cid] ?? -1;
-    if (bustedTeams.has(n1) && currentDepth >= bustedTeams.get(n1)) c1 += ' busted';
-    if (bustedTeams.has(n2) && currentDepth >= bustedTeams.get(n2)) c2 += ' busted';
+    const bust1 = bustedTeams.has(n1) && currentDepth >= bustedTeams.get(n1);
+    const bust2 = bustedTeams.has(n2) && currentDepth >= bustedTeams.get(n2);
+    if (bust1) c1 += ' busted';
+    if (bust2) c2 += ' busted';
 
-    return { c1, c2, check1, check2 };
+    // Show the actual winner next to any busted team in this matchup slot
+    const bustLabel1 = (bust1 && actualWinner && actualWinner !== n1) ? actualWinner : null;
+    const bustLabel2 = (bust2 && actualWinner && actualWinner !== n2) ? actualWinner : null;
+
+    return { c1, c2, check1, check2, bustLabel1, bustLabel2 };
 }
 
 function renderBracket(data, bid) {
@@ -413,32 +417,16 @@ function renderBracket(data, bid) {
             const w1 = winners.has(n1), w2 = winners.has(n2);
 
             const slotIndex = i / 2;
-            const { c1, c2, check1, check2 } = teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams);
+            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams);
 
-            // A selected team that's busted should still show as selected (blue)
-            // but with the strikethrough applied via .busted on the team-name
             const div = document.createElement('div');
             div.className = 'matchup';
-            const actualWinnerHere = (trueResults[cid] || [])[slotIndex];
-            const currentDepth = ROUND_DEPTH[cid] ?? -1;
-
-            // Show "→ ActualTeam" next to a busted selected team,
-            // but only when the actual winner is NOT already one of the two teams shown
-            const b1 = bustedTeams.has(n1) && currentDepth >= bustedTeams.get(n1);
-            const b2 = bustedTeams.has(n2) && currentDepth >= bustedTeams.get(n2);
-            const actualNotShown = actualWinnerHere && actualWinnerHere !== n1 && actualWinnerHere !== n2;
-
-            const bust1 = w1 && b1 && actualNotShown
-                ? ` <span class="bust-actual">→ ${actualWinnerHere}</span>` : '';
-            const bust2 = w2 && b2 && actualNotShown
-                ? ` <span class="bust-actual">→ ${actualWinnerHere}</span>` : '';
-
             div.innerHTML =
                 `<div class="team ${w1 ? 'selected' : w2 ? 'eliminated' : ''}${c1}">
-                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>${check1 ? ' <span class="check-mark">✓</span>' : ''}${bust1}
+                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>${check1 ? ' <span class="check-mark">✓</span>' : ''}${bustLabel1 ? ` <span class="bust-actual">${bustLabel1}</span>` : ''}
                 </div>` +
                 `<div class="team ${w2 ? 'selected' : w1 ? 'eliminated' : ''}${c2}">
-                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>${check2 ? ' <span class="check-mark">✓</span>' : ''}${bust2}
+                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>${check2 ? ' <span class="check-mark">✓</span>' : ''}${bustLabel2 ? ` <span class="bust-actual">${bustLabel2}</span>` : ''}
                 </div>`;
             container.appendChild(div);
         }
@@ -454,7 +442,7 @@ function renderBracket(data, bid) {
         if (actualChamp && data.champion === actualChamp) {
             ch.innerHTML = nameHtml + ' <span class="check-mark">✓</span>';
         } else if (actualChamp && data.champion !== actualChamp) {
-            ch.innerHTML = nameHtml + ` <span style="color:#dc2626;font-size:12px;">(Actual: ${actualChamp})</span>`;
+            ch.innerHTML = nameHtml + ` <span class="bust-actual">${actualChamp}</span>`;
         } else {
             ch.innerHTML = nameHtml;
         }
