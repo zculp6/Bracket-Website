@@ -245,6 +245,15 @@ body {
     opacity: 0.6;
 }
 
+.bust-actual {
+    font-size: 10px;
+    font-weight: 600;
+    color: #dc2626;
+    margin-left: 5px;
+    white-space: nowrap;
+    opacity: 0.85;
+}
+
 .seed { font-weight: bold; margin-right: 6px; }
 .team-name { font-size: 13px; }
 
