@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How It Works | March Madness</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #020b1f;
+            color: #e8eaf0;
+            min-height: 100vh;
+        }
+
+        /* ── NAV OVERRIDES ── */
+        .site-nav {
+            background: rgba(2,11,31,0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            box-shadow: none !important;
+        }
+        .site-nav .nav-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px; letter-spacing: 3px; color: #4d8aff !important;
+        }
+        .nav-divider {
+            width: 1px; height: 18px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 2px; flex-shrink: 0;
+        }
+        @media (max-width: 600px) { .nav-divider { display: none; } }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            text-align: center;
+            padding: 72px 20px 52px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0,51,160,0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .page-header h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(52px, 9vw, 80px);
+            letter-spacing: 5px;
+            background: linear-gradient(135deg, #4d8aff, #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        .page-header p {
+            color: rgba(255,255,255,0.4);
+            font-size: 15px;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        /* ── MAIN CONTENT ── */
+        .content-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 64px 24px 100px;
+        }
+
+        /* ── SECTION ── */
+        .section {
+            margin-bottom: 64px;
+        }
+
+        .section-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #4d8aff;
+            margin-bottom: 10px;
+        }
+
+        .section h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 38px;
+            letter-spacing: 3px;
+            color: #fff;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        .section p {
+            color: rgba(255,255,255,0.6);
+            font-size: 15px;
+            line-height: 1.75;
+            margin-bottom: 14px;
+        }
+
+        .section p:last-child { margin-bottom: 0; }
+
+        /* ── STEPS ── */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 22px 24px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .step:hover {
+            background: rgba(77,138,255,0.06);
+            border-color: rgba(77,138,255,0.25);
+        }
+
+        .step-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            color: #4d8aff;
+            line-height: 1;
+            min-width: 36px;
+            opacity: 0.7;
+        }
+
+        .step-body h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .step-body p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        /* ── SCORING TABLE ── */
+        .scoring-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .scoring-table thead tr {
+            background: rgba(0,51,160,0.4);
+        }
+
+        .scoring-table th {
+            padding: 13px 18px;
+            text-align: left;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            font-weight: 500;
+        }
+
+        .scoring-table tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.15s;
+        }
+
+        .scoring-table tbody tr:last-child { border-bottom: none; }
+        .scoring-table tbody tr:hover { background: rgba(77,138,255,0.06); }
+
+        .scoring-table td {
+            padding: 13px 18px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .scoring-table td:first-child { color: #fff; font-weight: 600; }
+
+        .pts-badge {
+            display: inline-block;
+            background: rgba(77,138,255,0.15);
+            color: #4d8aff;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 20px;
+            letter-spacing: 1px;
+            padding: 2px 12px;
+            border-radius: 6px;
+        }
+
+        /* ── AUTOFILL CARDS ── */
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .strategy-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 20px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .strategy-card:hover {
+            background: rgba(77,138,255,0.06);
+            border-color: rgba(77,138,255,0.25);
+        }
+
+        .strategy-icon { font-size: 28px; margin-bottom: 10px; }
+
+        .strategy-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .strategy-card p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* ── FAQ ── */
+        .faq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .faq-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            width: 100%;
+            background: none;
+            border: none;
+            text-align: left;
+            padding: 18px 22px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: #e8eaf0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.15s;
+        }
+
+        .faq-question:hover { background: rgba(77,138,255,0.06); }
+
+        .faq-chevron {
+            font-size: 12px;
+            color: #4d8aff;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .faq-item.open .faq-chevron { transform: rotate(180deg); }
+
+        .faq-answer {
+            display: none;
+            padding: 0 22px 18px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.7;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 14px;
+        }
+
+        .faq-item.open .faq-answer { display: block; }
+
+        /* ── CTA STRIP ── */
+        .cta-strip {
+            background: linear-gradient(135deg, rgba(0,51,160,0.5), rgba(0,71,212,0.3));
+            border: 1px solid rgba(77,138,255,0.25);
+            border-radius: 16px;
+            padding: 36px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-top: 64px;
+        }
+
+        .cta-strip h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px;
+            letter-spacing: 2px;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .cta-strip p {
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            padding: 13px 28px;
+            background: #4d8aff;
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 10px;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .cta-btn:hover { background: #6aa0ff; transform: translateY(-1px); }
+
+        /* ── DIVIDER ── */
+        .section-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            margin: 64px 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========================= NAVBAR ========================= -->
+<nav class="site-nav">
+    <a href="/" class="nav-logo">🏀 MM Bracket</a>
+    <div class="nav-links">
+        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+        <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
+        {% if current_user.is_authenticated %}
+        <a href="/my_brackets"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        {% endif %}
+        <span class="nav-divider"></span>
+        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+        <a href="/rankings_stats"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
+        <span class="nav-divider"></span>
+        <a href="/help" class="active"><span class="nav-icon">❓</span><span class="nav-label">Help</span></a>
+        <a href="/contact"><span class="nav-icon">✉️</span><span class="nav-label">Contact</span></a>
+        <span class="nav-divider"></span>
+        {% if current_user.is_authenticated %}
+        <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
+        {% else %}
+        <a href="/login"><span class="nav-icon">🔑</span><span class="nav-label">Login</span></a>
+        {% endif %}
+    </div>
+</nav>
+
+<!-- ========================= HEADER ========================= -->
+<div class="page-header">
+    <h1>How It Works</h1>
+    <p>Everything you need to know to play, score, and win</p>
+</div>
+
+<!-- ========================= CONTENT ========================= -->
+<div class="content-wrap">
+
+    <!-- GETTING STARTED -->
+    <div class="section">
+        <div class="section-label">Getting Started</div>
+        <h2>Play in 3 Simple Steps</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">01</div>
+                <div class="step-body">
+                    <h3>Create a free account</h3>
+                    <p>Register with a username and password. No email required. Takes about 10 seconds.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">02</div>
+                <div class="step-body">
+                    <h3>Fill out your bracket</h3>
+                    <p>Pick the winner of every game — from the Round of 64 all the way to the National Champion. You can fill it out manually by clicking teams, or use one of the auto-fill strategies to get a starting point and then customize it.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">03</div>
+                <div class="step-body">
+                    <h3>Submit and watch your score climb</h3>
+                    <p>Lock in your picks and check back as the tournament plays out. Your bracket is scored in real time as game results are entered. You can submit up to <strong style="color:#fff;">2 brackets</strong> per account.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- SCORING -->
+    <div class="section">
+        <div class="section-label">Scoring System</div>
+        <h2>How Points Are Calculated</h2>
+        <p>Points double each round — so picking deep tournament runs correctly is where the big points are. A correct Final Four pick is worth 8× a Round of 64 correct pick.</p>
+
+        <table class="scoring-table">
+            <thead>
+                <tr>
+                    <th>Round</th>
+                    <th>Games</th>
+                    <th>Points per Correct Pick</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Round of 64</td>
+                    <td>32 games</td>
+                    <td><span class="pts-badge">1</span></td>
+                </tr>
+                <tr>
+                    <td>Round of 32</td>
+                    <td>16 games</td>
+                    <td><span class="pts-badge">2</span></td>
+                </tr>
+                <tr>
+                    <td>Sweet 16</td>
+                    <td>8 games</td>
+                    <td><span class="pts-badge">4</span></td>
+                </tr>
+                <tr>
+                    <td>Elite 8</td>
+                    <td>4 games</td>
+                    <td><span class="pts-badge">8</span></td>
+                </tr>
+                <tr>
+                    <td>Final Four</td>
+                    <td>2 games</td>
+                    <td><span class="pts-badge">16</span></td>
+                </tr>
+                <tr>
+                    <td>Championship</td>
+                    <td>1 game</td>
+                    <td><span class="pts-badge">32</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top:18px; font-size:13px; color:rgba(255,255,255,0.35);">
+            Maximum possible score: 192 points (all 63 games correct).
+        </p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- BRACKET DISPLAY -->
+    <div class="section">
+        <div class="section-label">Reading Your Bracket</div>
+        <h2>What the Colors Mean</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num" style="color:#22c55e;">✓</div>
+                <div class="step-body">
+                    <h3>Green checkmark — correct pick</h3>
+                    <p>You picked the right winner for this game. Points have been added to your score.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num" style="color:#4d8aff; font-size:22px; padding-top:4px;">━━</div>
+                <div class="step-body">
+                    <h3>Strikethrough — busted team</h3>
+                    <p>A team you picked to advance has already been eliminated from the real tournament. Any future rounds you had them winning are now impossible to score.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num" style="color:#dc2626; font-size:14px; padding-top:6px;">Actual</div>
+                <div class="step-body">
+                    <h3>Red "Actual:" label — wrong pick</h3>
+                    <p>You picked the wrong team for this slot. The correct real-world winner is shown next to it so you can see where you went wrong.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- AUTOFILL -->
+    <div class="section">
+        <div class="section-label">Auto-Fill Strategies</div>
+        <h2>Let the Algorithm Help</h2>
+        <p>Not sure where to start? Use one of the built-in auto-fill strategies to populate your entire bracket instantly. You can always override individual picks afterward.</p>
+
+        <div class="strategy-grid">
+            <div class="strategy-card">
+                <div class="strategy-icon">🏅</div>
+                <h3>Chalk</h3>
+                <p>Always picks the lower seed (the favorite). No upsets. Safe but predictable.</p>
+            </div>
+            <div class="strategy-card">
+                <div class="strategy-icon">🎲</div>
+                <h3>Random</h3>
+                <p>Completely random picks — a 50/50 coin flip for every game. High chaos, high variance.</p>
+            </div>
+            <div class="strategy-card">
+                <div class="strategy-icon">📊</div>
+                <h3>By Seed Probability</h3>
+                <p>Uses historical seed win rates from past tournaments to weight each pick probabilistically.</p>
+            </div>
+            <div class="strategy-card">
+                <div class="strategy-icon">📈</div>
+                <h3>By Ranking</h3>
+                <p>Uses team strength ratings and statistical rankings to pick winners based on real performance data.</p>
+            </div>
+            <div class="strategy-card">
+                <div class="strategy-icon">🧠</div>
+                <h3>Simulation</h3>
+                <p>The most sophisticated option — blends team strength ratings with historical seed probabilities for a balanced, realistic bracket.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- FAQ -->
+    <div class="section">
+        <div class="section-label">FAQ</div>
+        <h2>Frequently Asked Questions</h2>
+
+        <div class="faq-list">
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    Can I edit my bracket after submitting?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-answer">
+                    No — once you submit your bracket it is locked. This keeps the competition fair. Make sure you're happy with all your picks before hitting submit.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    How many brackets can I submit?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-answer">
+                    You can submit up to 2 brackets per account. Each bracket is scored independently on the leaderboard.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    When are game results updated?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Game results are updated as the tournament administrator enters each game result. All bracket scores are recalculated automatically the moment a result is saved.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    What is the maximum possible score?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-answer">
+                    192 points — that would require picking all 63 games correctly, which has never been done in recorded history.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    How does the Rankings & Stats page work?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-answer">
+                    The Rankings & Stats page shows detailed advanced stats for every team in the tournament — offensive and defensive efficiency, pace, shooting percentages, and more. Use it to research teams before filling out your bracket.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    What does "busted" mean?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-answer">
+                    A "busted" team is one you picked to advance that has already been eliminated from the real tournament. Their name will appear with a strikethrough in your bracket wherever you have them winning future rounds.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-strip">
+        <div>
+            <h3>Ready to Play?</h3>
+            <p>Create an account and lock in your picks.</p>
+        </div>
+        {% if current_user.is_authenticated %}
+        <a href="/bracket" class="cta-btn">⚡ Fill My Bracket</a>
+        {% else %}
+        <a href="/register" class="cta-btn">Create Free Account →</a>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+    document.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.closest('.faq-item');
+            const isOpen = item.classList.contains('open');
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+            if (!isOpen) item.classList.add('open');
+        });
+    });
+</script>
+
+</body>
+</html>

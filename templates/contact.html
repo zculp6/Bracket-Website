@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact | March Madness</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #020b1f;
+            color: #e8eaf0;
+            min-height: 100vh;
+        }
+
+        /* ── NAV OVERRIDES ── */
+        .site-nav {
+            background: rgba(2,11,31,0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            box-shadow: none !important;
+        }
+        .site-nav .nav-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px; letter-spacing: 3px; color: #4d8aff !important;
+        }
+        .nav-divider {
+            width: 1px; height: 18px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 2px; flex-shrink: 0;
+        }
+        @media (max-width: 600px) { .nav-divider { display: none; } }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            text-align: center;
+            padding: 72px 20px 52px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0,51,160,0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .page-header h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(52px, 9vw, 80px);
+            letter-spacing: 5px;
+            background: linear-gradient(135deg, #4d8aff, #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        .page-header p {
+            color: rgba(255,255,255,0.4);
+            font-size: 15px;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        /* ── MAIN LAYOUT ── */
+        .content-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 64px 24px 100px;
+        }
+
+        /* ── ABOUT CARD ── */
+        .about-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 40px 44px;
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 600px) {
+            .about-card { flex-direction: column; gap: 24px; padding: 28px 24px; }
+        }
+
+        .avatar {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0033a0, #4d8aff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 42px;
+            color: #fff;
+            flex-shrink: 0;
+            letter-spacing: 2px;
+        }
+
+        .about-body h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            letter-spacing: 3px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .about-role {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #4d8aff;
+            margin-bottom: 16px;
+        }
+
+        .about-body p {
+            color: rgba(255,255,255,0.55);
+            font-size: 15px;
+            line-height: 1.75;
+            margin-bottom: 12px;
+        }
+        .about-body p:last-child { margin-bottom: 0; }
+
+        /* ── CONTACT LINKS ── */
+        .contact-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 18px 22px;
+            text-decoration: none;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        }
+
+        .contact-link:hover {
+            background: rgba(77,138,255,0.08);
+            border-color: rgba(77,138,255,0.3);
+            transform: translateX(4px);
+        }
+
+        .contact-link-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .contact-link-icon.email  { background: rgba(240,208,96,0.12); }
+        .contact-link-icon.github { background: rgba(255,255,255,0.08); }
+        .contact-link-icon.linkedin { background: rgba(0,119,181,0.2); }
+        .contact-link-icon.twitter { background: rgba(29,161,242,0.15); }
+
+        .contact-link-body { flex: 1; }
+
+        .contact-link-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .contact-link-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.5px;
+        }
+
+        .contact-link-arrow {
+            font-size: 16px;
+            color: rgba(77,138,255,0.5);
+            transition: color 0.15s;
+        }
+        .contact-link:hover .contact-link-arrow { color: #4d8aff; }
+
+        /* ── PROJECT INFO ── */
+        .section-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #4d8aff;
+            margin-bottom: 10px;
+        }
+
+        .section h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 38px;
+            letter-spacing: 3px;
+            color: #fff;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .tech-chip {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .tech-chip:hover {
+            background: rgba(77,138,255,0.07);
+            border-color: rgba(77,138,255,0.2);
+            color: #fff;
+        }
+
+        .tech-chip-icon { font-size: 18px; }
+
+        /* ── SECTION DIVIDER ── */
+        .section-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            margin: 48px 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========================= NAVBAR ========================= -->
+<nav class="site-nav">
+    <a href="/" class="nav-logo">🏀 MM Bracket</a>
+    <div class="nav-links">
+        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+        <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
+        {% if current_user.is_authenticated %}
+        <a href="/my_brackets"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        {% endif %}
+        <span class="nav-divider"></span>
+        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+        <a href="/rankings_stats"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
+        <span class="nav-divider"></span>
+        <a href="/help"><span class="nav-icon">❓</span><span class="nav-label">Help</span></a>
+        <a href="/contact" class="active"><span class="nav-icon">✉️</span><span class="nav-label">Contact</span></a>
+        <span class="nav-divider"></span>
+        {% if current_user.is_authenticated %}
+        <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
+        {% else %}
+        <a href="/login"><span class="nav-icon">🔑</span><span class="nav-label">Login</span></a>
+        {% endif %}
+    </div>
+</nav>
+
+<!-- ========================= HEADER ========================= -->
+<div class="page-header">
+    <h1>Contact</h1>
+    <p>About the project and how to get in touch</p>
+</div>
+
+<!-- ========================= CONTENT ========================= -->
+<div class="content-wrap">
+
+    <!-- ABOUT THE AUTHOR -->
+    <div class="about-card">
+        <div class="avatar">JD</div>
+        <div class="about-body">
+            <h2>Zachary Culp</h2>
+            <div class="about-role">Creator &amp; Developer</div>
+            <p>
+                Hey! I built this March Madness bracket challenge as a passion project to make tournament season more fun for friends and family. The goal was a clean, fast bracket experience with smart auto-fill tools and a twist from the typical scoring methods.
+            </p>
+            <p>
+                If you run into any bugs, have a feature request, or just want to talk sports analytics, feel free to reach out via any of the channels below.
+            </p>
+        </div>
+    </div>
+
+    <!-- CONTACT LINKS -->
+    <a href="mailto:zachculp6@gmail.com" class="contact-link">
+        <div class="contact-link-icon email">📧</div>
+        <div class="contact-link-body">
+            <div class="contact-link-label">Email</div>
+            <div class="contact-link-value">your@email.com</div>
+        </div>
+        <div class="contact-link-arrow">→</div>
+    </a>
+
+    <a href="https://github.com/zculp6" target="_blank" rel="noopener" class="contact-link">
+        <div class="contact-link-icon github">🐙</div>
+        <div class="contact-link-body">
+            <div class="contact-link-label">GitHub</div>
+            <div class="contact-link-value">github.com/yourusername</div>
+        </div>
+        <div class="contact-link-arrow">→</div>
+    </a>
+
+    <a href="https://www.linkedin.com/in/zachary-culp-347494251/" target="_blank" rel="noopener" class="contact-link">
+        <div class="contact-link-icon linkedin">💼</div>
+        <div class="contact-link-body">
+            <div class="contact-link-label">LinkedIn</div>
+            <div class="contact-link-value">linkedin.com/in/yourprofile</div>
+        </div>
+        <div class="contact-link-arrow">→</div>
+    </a>
+
+    <div class="section-divider"></div>
+
+    <!-- ABOUT THE PROJECT -->
+    <div class="section">
+        <div class="section-label">About the Project</div>
+        <h2>Built With</h2>
+
+        <div class="tech-grid">
+            <div class="tech-chip"><span class="tech-chip-icon">🐍</span> Python</div>
+            <div class="tech-chip"><span class="tech-chip-icon">⚗️</span> Flask</div>
+            <div class="tech-chip"><span class="tech-chip-icon">🐘</span> PostgreSQL</div>
+            <div class="tech-chip"><span class="tech-chip-icon">🎨</span> HTML / CSS</div>
+            <div class="tech-chip"><span class="tech-chip-icon">⚡</span> Vanilla JS</div>
+            <div class="tech-chip"><span class="tech-chip-icon">☁️</span> Render</div>
+            <div class="tech-chip"><span class="tech-chip-icon">📊</span> Pandas</div>
+            <div class="tech-chip"><span class="tech-chip-icon">🔐</span> Flask-Login</div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

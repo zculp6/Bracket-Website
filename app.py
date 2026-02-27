@@ -129,6 +129,14 @@ def my_brackets_page():
     true_results = _build_true_results()
     return render_template("my_brackets.html", brackets=brackets, true_results=true_results)
 
+@app.route("/help")
+def help_page():
+    return render_template("help.html")
+
+@app.route("/contact")
+def contact_page():
+    return render_template("contact.html")
+
 @app.route("/leaderboard")
 def leaderboard_page():
     brackets = Bracket.query.order_by(Bracket.score.desc()).all()
