@@ -510,7 +510,8 @@
         </div>
 
         <button id="resetBracketButton">↺ Reset</button>
-        <button id="submitBracketButton">✅ Submit Bracket</button>
+        <button id="saveBracketButton">💾 Save</button>
+        <button id="submitBracketButton">✅ Submit</button>
     </div>
 </div>
 
@@ -636,19 +637,98 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.bracket-region-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const region = tab.dataset.region;
-            document.querySelectorAll('.bracket-region-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.bracket-region-panel').forEach(p => p.classList.remove('active'));
-            tab.classList.add('active');
-            const panel = document.querySelector(`.bracket-region-panel[data-region="${region}"]`);
-            if (panel) panel.classList.add('active');
+    /* ── SAVE MODAL LOGIC ── */
+    const saveModal    = document.getElementById('saveModal');
+    const saveNameInput = document.getElementById('saveNameInput');
+    const saveCharCount = document.getElementById('saveCharCount');
+    const saveCancelBtn = document.getElementById('saveCancelBtn');
+    const saveConfirmBtn = document.getElementById('saveConfirmBtn');
+
+    document.getElementById('saveBracketButton').addEventListener('click', () => {
+        saveModal.classList.add('open');
+        saveNameInput.value = '';
+        saveCharCount.textContent = '0';
+        saveNameInput.focus();
+    });
+
+    saveCancelBtn.addEventListener('click', () => saveModal.classList.remove('open'));
+
+    saveModal.addEventListener('click', (e) => {
+        if (e.target === saveModal) saveModal.classList.remove('open');
+    });
+
+    saveNameInput.addEventListener('input', () => {
+        saveCharCount.textContent = saveNameInput.value.length;
+    });
+
+    saveNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') saveConfirmBtn.click();
+    });
+
+    saveConfirmBtn.addEventListener('click', () => {
+        const bracketName = saveNameInput.value.trim() || 'My Bracket';
+        const bracketData = buildBracketJSON();
+
+        saveConfirmBtn.disabled = true;
+        saveConfirmBtn.textContent = 'Saving…';
+
+        fetch('/save_bracket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bracket: bracketData, bracket_name: bracketName })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                saveModal.classList.remove('open');
+                // Show a brief success toast, then optionally redirect
+                const toast = document.createElement('div');
+                toast.textContent = '✅ Bracket saved!';
+                toast.style.cssText = `
+                    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+                    background:#0033a0; color:#fff; padding:12px 24px; border-radius:8px;
+                    font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px;
+                    z-index:9999; box-shadow:0 4px 16px rgba(0,0,0,0.3);
+                    animation: fadeInUp 0.2s ease;
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2500);
+            }
+        })
+        .catch(err => {
+            console.error('Save failed:', err);
+            alert('Save failed. Please try again.');
+        })
+        .finally(() => {
+            saveConfirmBtn.disabled = false;
+            saveConfirmBtn.textContent = '💾 Save Draft';
         });
     });
-});
 </script>
+
+<!-- ========================= SAVE MODAL ========================= -->
+<div class="modal-overlay" id="saveModal">
+    <div class="modal-box">
+        <h2>Save Bracket</h2>
+        <p>Save your picks as a draft. You can view it on My Brackets and submit it to the leaderboard later.</p>
+        <label class="modal-label" for="saveNameInput">Bracket Name</label>
+        <input
+            class="modal-input"
+            id="saveNameInput"
+            type="text"
+            maxlength="50"
+            placeholder="e.g. My Draft #1"
+            autocomplete="off"
+        >
+        <div class="modal-char-count"><span id="saveCharCount">0</span> / 50</div>
+        <div class="modal-actions">
+            <button class="modal-cancel" id="saveCancelBtn">Cancel</button>
+            <button class="modal-confirm" id="saveConfirmBtn">💾 Save Draft</button>
+        </div>
+    </div>
+</div>
 
 <!-- ========================= SUBMIT MODAL ========================= -->
 <div class="modal-overlay" id="submitModal">

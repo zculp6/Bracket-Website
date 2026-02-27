@@ -11,10 +11,11 @@ class User(UserMixin, db.Model):
 class Bracket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    entry_number = db.Column(db.Integer, nullable=False)  # 1 or 2
+    entry_number = db.Column(db.Integer, nullable=False, default=0)  # 1 or 2 for submitted; 0 for saved drafts
     bracket_name = db.Column(db.String(100), nullable=False, default='My Bracket')
     bracket_data = db.Column(db.JSON, nullable=False)
     score = db.Column(db.Integer, default=0)
+    is_submitted = db.Column(db.Boolean, default=False, nullable=False)  # True = locked in for leaderboard
 
     user = db.relationship('User', backref='brackets')
 

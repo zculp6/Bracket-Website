@@ -119,15 +119,6 @@ def view_bracket(bracket_id):
     true_results = _build_true_results()
     return render_template("view_bracket.html", brackets=[bracket], true_results=true_results)
 
-@app.route("/my_brackets")
-@login_required
-def my_brackets_page():
-    brackets = (Bracket.query
-                .filter_by(user_id=current_user.id)
-                .order_by(Bracket.entry_number)
-                .all())
-    true_results = _build_true_results()
-    return render_template("my_brackets.html", brackets=brackets, true_results=true_results)
 
 @app.route("/help")
 def help_page():
@@ -322,35 +313,137 @@ def get_results():
     })
 
 
-@app.route("/submit_bracket", methods=["POST"])
+@app.route("/save_bracket", methods=["POST"])
 @login_required
-def submit_bracket():
+def save_bracket():
+    """Save a draft bracket (not submitted to leaderboard). Up to 25 total brackets per user."""
     data = request.get_json(force=True)
     bracket_data = data.get("bracket")
     bracket_name = (data.get("bracket_name") or "My Bracket").strip()
 
-    if  len(bracket_name) > 50:
+    if len(bracket_name) > 50:
         return jsonify({"error": "Bracket name must be 50 characters or fewer"}), 400
 
     if not bracket_data:
         return jsonify({"error": "No bracket data provided"}), 400
 
-    existing = Bracket.query.filter_by(user_id=current_user.id).count()
-    if existing >= 2:
-        return jsonify({"error": "You have already submitted 2 brackets."}), 400
+    total = Bracket.query.filter_by(user_id=current_user.id).count()
+    if total >= 25:
+        return jsonify({"error": "You have reached the maximum of 25 saved brackets."}), 400
 
     new_bracket = Bracket(
         user_id=current_user.id,
-        entry_number=existing + 1,
+        entry_number=0,           # 0 = draft/saved, not on leaderboard
+        bracket_name=bracket_name,
         bracket_data=bracket_data,
-        bracket_name = bracket_name or "My Bracket"
+        is_submitted=False
     )
-
     db.session.add(new_bracket)
     db.session.commit()
 
-    return jsonify({"message": "Bracket submitted successfully!"})
+    return jsonify({"message": "Bracket saved!", "bracket_id": new_bracket.id})
 
+
+@app.route("/submit_bracket", methods=["POST"])
+@login_required
+def submit_bracket():
+    """
+    Lock a bracket into the leaderboard. Max 2 submitted per user.
+    Can submit an existing saved bracket by passing bracket_id,
+    or create a new one from scratch.
+    """
+    data = request.get_json(force=True)
+    bracket_data = data.get("bracket")
+    bracket_name = (data.get("bracket_name") or "My Bracket").strip()
+    bracket_id   = data.get("bracket_id")   # optional: submit an existing saved bracket
+
+    if len(bracket_name) > 50:
+        return jsonify({"error": "Bracket name must be 50 characters or fewer"}), 400
+
+    # Count how many are already submitted
+    submitted_count = Bracket.query.filter_by(
+        user_id=current_user.id, is_submitted=True
+    ).count()
+
+    if submitted_count >= 2:
+        return jsonify({"error": "You have already submitted 2 brackets. That's the maximum."}), 400
+
+    entry_number = submitted_count + 1  # will be 1 or 2
+
+    if bracket_id:
+        # Promote an existing saved bracket to submitted
+        b = Bracket.query.filter_by(id=bracket_id, user_id=current_user.id).first()
+        if not b:
+            return jsonify({"error": "Bracket not found."}), 404
+        if b.is_submitted:
+            return jsonify({"error": "This bracket is already submitted."}), 400
+        b.is_submitted  = True
+        b.entry_number  = entry_number
+        b.bracket_name  = bracket_name
+        db.session.commit()
+    else:
+        # Create a brand-new submitted bracket
+        if not bracket_data:
+            return jsonify({"error": "No bracket data provided"}), 400
+
+        total = Bracket.query.filter_by(user_id=current_user.id).count()
+        if total >= 25:
+            return jsonify({"error": "You have reached the maximum of 25 saved brackets."}), 400
+
+        b = Bracket(
+            user_id=current_user.id,
+            entry_number=entry_number,
+            bracket_name=bracket_name,
+            bracket_data=bracket_data,
+            is_submitted=True
+        )
+        db.session.add(b)
+        db.session.commit()
+
+    # Rescore immediately so submitted bracket gets a score
+    _rescore_all_brackets()
+
+    return jsonify({"message": "Bracket submitted!", "bracket_id": b.id})
+
+
+@app.route("/my_brackets")
+@login_required
+def my_brackets_page():
+    all_brackets = (Bracket.query
+                    .filter_by(user_id=current_user.id)
+                    .order_by(Bracket.is_submitted.desc(), Bracket.entry_number, Bracket.id)
+                    .all())
+    submitted = [b for b in all_brackets if b.is_submitted]
+    saved     = [b for b in all_brackets if not b.is_submitted]
+    true_results = _build_true_results()
+    return render_template(
+        "my_brackets.html",
+        submitted=submitted,
+        saved=saved,
+        brackets=submitted,      # kept for backward compat with view rendering
+        true_results=true_results
+    )
+
+@app.route("/delete_bracket", methods=["POST"])
+@login_required
+def delete_bracket():
+    """Delete a saved (non-submitted) bracket."""
+    data = request.get_json(force=True)
+    bracket_id = data.get("bracket_id")
+
+    if not bracket_id:
+        return jsonify({"error": "bracket_id required"}), 400
+
+    b = Bracket.query.filter_by(id=bracket_id, user_id=current_user.id).first()
+    if not b:
+        return jsonify({"error": "Bracket not found."}), 404
+
+    if b.is_submitted:
+        return jsonify({"error": "Submitted brackets cannot be deleted."}), 400
+
+    db.session.delete(b)
+    db.session.commit()
+    return jsonify({"message": "Bracket deleted."})
 # ---------------------------------------
 # RUN SERVER
 # ---------------------------------------

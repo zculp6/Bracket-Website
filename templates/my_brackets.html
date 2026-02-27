@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ── NAV DIVIDER (matches bracket.html) ── */
+        /* ── NAV DIVIDER ── */
         .nav-divider {
             width: 1px; height: 18px;
             background: rgba(255,255,255,0.18);
@@ -18,79 +18,36 @@
         }
         @media (max-width: 600px) { .nav-divider { display: none; } }
 
-        /* ── CONTROLS BAR — identical to bracket.html ── */
-        .bracket-controls {
-            background: #0033a0;
-            padding: 12px 24px;
+        /* PAGE LAYOUT */
+        .page-wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        .page-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             flex-wrap: wrap;
-            gap: 10px;
-            border-bottom: 3px solid #001f7a;
-            position: sticky;
-            top: 64px;
-            z-index: 200;
+            gap: 16px;
+            margin-bottom: 40px;
         }
-        .bracket-controls h1 {
+        .page-header h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 48px;
+            letter-spacing: 3px;
+            color: #0033a0;
             margin: 0;
-            font-size: 22px;
-            color: #fff;
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 2px;
-        }
-        .controls-right { display: flex; align-items: center; gap: 10px; }
-
-        /* Bracket switcher tabs sit in the controls bar left side */
-        .bracket-tab {
-            padding: 7px 16px;
-            background: rgba(255,255,255,0.1);
-            border: 1.5px solid rgba(255,255,255,0.2);
-            border-radius: 7px;
-            color: rgba(255,255,255,0.75);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 13px; font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap;
-        }
-        .bracket-tab:hover { background: rgba(255,255,255,0.18); color: #fff; }
-        .bracket-tab.active { background: #fff; color: #0033a0; border-color: #fff; }
-
-        /* Score pill — matches submit button styling */
-        .score-pill {
-            background: rgba(240,208,96,0.15);
-            border: 1px solid rgba(240,208,96,0.35);
-            border-radius: 20px;
-            padding: 6px 18px;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 22px; color: #f0d060; letter-spacing: 2px;
-            white-space: nowrap;
-        }
-        .score-pill small {
-            font-family: 'DM Sans', sans-serif; font-size: 10px;
-            color: rgba(240,208,96,0.5); letter-spacing: 2px;
-            text-transform: uppercase; margin-right: 6px;
         }
 
-        /* Locked badge — mirrors the autofill trigger style */
-        .locked-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 8px 14px;
-            background: rgba(255,255,255,0.07);
-            border: 1.5px solid rgba(255,255,255,0.15);
-            border-radius: 8px;
-            font-size: 13px; font-weight: 600;
-            color: rgba(255,255,255,0.45);
-            font-family: 'DM Sans', sans-serif;
-            white-space: nowrap;
-        }
-
-        /* New bracket CTA */
         .btn-new-bracket {
-            padding: 9px 18px;
-            background: #f0d060;
-            color: #020b1f;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 22px;
+            background: #0033a0;
+            color: #fff;
             font-size: 14px; font-weight: 700;
             font-family: 'DM Sans', sans-serif;
             border: none; border-radius: 8px;
@@ -98,64 +55,404 @@
             transition: background 0.15s;
             white-space: nowrap;
         }
-        .btn-new-bracket:hover { background: #ffe066; }
+        .btn-new-bracket:hover { background: #00246a; }
 
-        /* ── PANEL VISIBILITY ── */
+        /* SECTION HEADERS */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .section-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px;
+            letter-spacing: 2px;
+            color: #0033a0;
+            margin: 0;
+        }
+        .section-counter {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px; font-weight: 700;
+            color: rgba(0,51,160,0.5);
+            background: rgba(0,51,160,0.08);
+            border: 1px solid rgba(0,51,160,0.15);
+            border-radius: 20px;
+            padding: 3px 10px;
+            letter-spacing: 1px;
+        }
+
+        /* SUBMITTED SLOTS */
+        .submitted-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+        @media (max-width: 600px) { .submitted-grid { grid-template-columns: 1fr; } }
+
+        .submitted-slot {
+            border-radius: 14px;
+            overflow: hidden;
+            border: 2px solid #0033a0;
+            background: #fff;
+            box-shadow: 0 2px 12px rgba(0,51,160,0.08);
+        }
+        .submitted-slot.empty {
+            border: 2px dashed rgba(0,51,160,0.2);
+            background: rgba(0,51,160,0.02);
+            box-shadow: none;
+        }
+
+        .slot-header {
+            background: #0033a0;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slot-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+        .slot-name {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px; font-weight: 700;
+            color: #fff;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .slot-score {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            color: #f0d060;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .slot-body {
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .slot-meta {
+            font-size: 12px;
+            color: rgba(0,0,0,0.35);
+            font-family: 'DM Sans', sans-serif;
+        }
+        .slot-meta strong { color: rgba(0,0,0,0.55); }
+
+        .btn-view {
+            padding: 7px 16px;
+            background: #0033a0;
+            color: #fff;
+            font-size: 13px; font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            border: none; border-radius: 7px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .btn-view:hover { background: #00246a; }
+
+        .submitted-slot.empty .slot-header {
+            background: rgba(0,51,160,0.1);
+        }
+        .submitted-slot.empty .slot-num { color: rgba(0,51,160,0.2); }
+
+        .empty-slot-body {
+            padding: 20px 18px;
+            text-align: center;
+        }
+        .empty-slot-body p {
+            color: rgba(0,0,0,0.3);
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+        .btn-submit-cta {
+            display: inline-block;
+            padding: 8px 20px;
+            background: #0033a0;
+            color: #fff;
+            font-size: 13px; font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            border: none; border-radius: 7px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-submit-cta:hover { background: #00246a; }
+
+        /* SAVED DRAFTS LIST */
+        .saved-section { margin-top: 0; }
+
+        .saved-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .saved-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 10px;
+            padding: 14px 18px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .saved-row:hover {
+            border-color: rgba(0,51,160,0.25);
+            box-shadow: 0 2px 8px rgba(0,51,160,0.08);
+        }
+
+        .saved-icon { font-size: 22px; flex-shrink: 0; opacity: 0.5; }
+
+        .saved-name {
+            flex: 1;
+            font-size: 15px; font-weight: 700;
+            color: #111;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .saved-champion {
+            font-size: 12px;
+            color: rgba(0,0,0,0.35);
+            font-family: 'DM Sans', sans-serif;
+            white-space: nowrap;
+        }
+
+        .saved-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px; font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-sm-view   { background: rgba(0,51,160,0.08); color: #0033a0; }
+        .btn-sm-view:hover   { background: rgba(0,51,160,0.15); }
+        .btn-sm-submit { background: #0033a0; color: #fff; }
+        .btn-sm-submit:hover { background: #00246a; }
+        .btn-sm-delete { background: rgba(220,38,38,0.08); color: #dc2626; }
+        .btn-sm-delete:hover { background: rgba(220,38,38,0.15); }
+        .btn-sm:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* EMPTY STATES */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: rgba(0,0,0,0.3);
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; margin-bottom: 20px; }
+
+        /* SUBMIT MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal-box {
+            background: #0d1a3a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 32px;
+            width: 380px;
+            max-width: calc(100vw - 32px);
+            color: #e8eaf0;
+        }
+        .modal-box h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 30px; letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+        .modal-box p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+        .modal-label {
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            display: block;
+            margin-bottom: 8px;
+        }
+        .modal-input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1.5px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: #e8eaf0;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            padding: 10px 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .modal-input:focus { border-color: #4d8aff; }
+        .modal-char-count {
+            font-size: 11px;
+            color: rgba(255,255,255,0.2);
+            text-align: right;
+            margin-top: 4px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        .modal-cancel {
+            flex: 1; padding: 10px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.6);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px; font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .modal-cancel:hover { background: rgba(255,255,255,0.1); }
+        .modal-confirm {
+            flex: 2; padding: 10px;
+            background: #f0d060;
+            border: none;
+            border-radius: 8px;
+            color: #020b1f;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px; font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, opacity 0.15s;
+        }
+        .modal-confirm:hover { background: #ffe066; }
+        .modal-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* BRACKET VIEWER */
+        .viewer-section { margin-top: 56px; }
+
+        .viewer-section-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(0,51,160,0.12);
+        }
+        .viewer-section-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px; letter-spacing: 2px;
+            color: #0033a0;
+            margin: 0;
+        }
+
+        .bracket-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .bracket-tab {
+            padding: 7px 16px;
+            background: rgba(0,51,160,0.07);
+            border: 1.5px solid rgba(0,51,160,0.2);
+            border-radius: 7px;
+            color: #0033a0;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .bracket-tab:hover { background: rgba(0,51,160,0.12); }
+        .bracket-tab.active { background: #0033a0; color: #fff; border-color: #0033a0; }
+
+        .tab-badge {
+            display: inline-block;
+            background: rgba(240,208,96,0.25);
+            color: #8a6900;
+            font-size: 10px; font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
+        }
+        .bracket-tab.active .tab-badge {
+            background: rgba(240,208,96,0.35);
+            color: #f0d060;
+        }
+
         .bracket-panel { display: none; }
         .bracket-panel.active { display: block; }
 
-        /* ── LOCK ALL BRACKET INTERACTIONS ── */
-        .bracket-panel #bracketContainer {
+        .bracket-panel .bracket-container-inner {
             pointer-events: none;
             user-select: none;
         }
         .bracket-region-tabs { pointer-events: auto; }
 
-        /* Region tabs dark theme */
         .bracket-region-tab {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.25);
+            background: rgba(0,51,160,0.08);
+            border-color: rgba(0,51,160,0.2);
             color: #0033a0;
         }
-        .bracket-region-tab:hover { background: rgba(255,255,255,0.18); }
+        .bracket-region-tab:hover { background: rgba(0,51,160,0.15); }
         .bracket-region-tab.active {
-            background: rgba(255,255,255,0.95);
+            background: #fff;
             color: #0033a0;
             border-color: #0033a0;
         }
 
-        /* ── BUST ACTUAL LABEL ── */
         .bust-actual {
             color: #dc2626;
             margin-left: 4px;
-        }
-
-        /* ── EMPTY STATE ── */
-        .empty-state { text-align: center; padding: 100px 20px; }
-        .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
-        .empty-state h3 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 36px; letter-spacing: 2px; margin-bottom: 10px;
-        }
-        .empty-state p { color: rgba(0,0,0,0.4); margin-bottom: 24px; font-size: 15px; }
-        .empty-state a {
-            display: inline-block; padding: 12px 28px;
-            background: #0033a0; color: #fff; border-radius: 8px;
-            text-decoration: none; font-weight: 700;
-            font-family: 'DM Sans', sans-serif;
         }
     </style>
 </head>
 <body>
 
-<!-- ========================= NAVBAR ========================= -->
+<!-- NAVBAR -->
 <nav class="site-nav">
     <a href="/" class="nav-logo">🏀 MM Bracket</a>
     <div class="nav-links">
         <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
         <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
         {% if current_user.is_authenticated %}
-        <a href="/my_brackets"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        <a href="/my_brackets" class="active"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
         {% endif %}
         <span class="nav-divider"></span>
         <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
@@ -169,105 +466,199 @@
     </div>
 </nav>
 
-{% if brackets %}
+<div class="page-wrap">
 
-<!-- ========================= CONTROLS BAR ========================= -->
-<div class="bracket-controls">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <h1 id="activeName">{{ brackets[0].bracket_name }}</h1>
-        {% if brackets|length > 1 %}
-        <div style="display:flex;gap:6px;">
-            {% for b in brackets %}
-            <button class="bracket-tab {% if loop.first %}active{% endif %}"
-                    data-id="{{ b.id }}"
-                    data-name="{{ b.bracket_name }}"
-                    data-score="{{ b.score }}">
-                {{ b.bracket_name }}
-            </button>
+    {% set total_count = (submitted|length) + (saved|length) %}
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <h1>My Brackets</h1>
+        {% if total_count < 25 %}
+        <a href="/bracket" class="btn-new-bracket">⚡ Build New Bracket</a>
+        {% endif %}
+    </div>
+
+    <!-- ═══ SUBMITTED BRACKETS ═══ -->
+    <div class="section-header">
+        <h2>Submitted</h2>
+        <span class="section-counter">{{ submitted|length }} / 2</span>
+    </div>
+
+    <div class="submitted-grid">
+        {% for i in range(2) %}
+        {% if i < submitted|length %}
+            {% set b = submitted[i] %}
+            <div class="submitted-slot">
+                <div class="slot-header">
+                    <span class="slot-num">#{{ i + 1 }}</span>
+                    <span class="slot-name">{{ b.bracket_name }}</span>
+                    <span class="slot-score">{{ b.score }}</span>
+                </div>
+                <div class="slot-body">
+                    <div class="slot-meta">
+                        <strong>Champion:</strong>
+                        {{ b.bracket_data.get('champion', '—') if b.bracket_data else '—' }}
+                    </div>
+                    <a href="#viewer" class="btn-view bracket-viewer-link" data-id="{{ b.id }}">View →</a>
+                </div>
+            </div>
+        {% else %}
+            <div class="submitted-slot empty">
+                <div class="slot-header">
+                    <span class="slot-num">#{{ i + 1 }}</span>
+                    <span class="slot-name" style="color:rgba(0,51,160,0.3);font-weight:400;">Empty slot</span>
+                </div>
+                <div class="empty-slot-body">
+                    {% if saved|length > 0 %}
+                    <p>Submit a saved draft, or build a new bracket.</p>
+                    {% else %}
+                    <p>Build a bracket and submit it to the leaderboard.</p>
+                    {% endif %}
+                    <a href="/bracket" class="btn-submit-cta">⚡ Build &amp; Submit</a>
+                </div>
+            </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- ═══ SAVED DRAFTS ═══ -->
+    <div class="saved-section">
+        <div class="section-header">
+            <h2>Saved Drafts</h2>
+            <span class="section-counter">{{ saved|length }} / {{ 25 - submitted|length }}</span>
+        </div>
+
+        {% if saved %}
+        <div class="saved-list">
+            {% for b in saved %}
+            <div class="saved-row" id="saved-row-{{ b.id }}">
+                <span class="saved-icon">📄</span>
+                <span class="saved-name">{{ b.bracket_name }}</span>
+                <span class="saved-champion">🏀 {{ b.bracket_data.get('champion', 'No champion') if b.bracket_data else 'No champion' }}</span>
+                <div class="saved-actions">
+                    <a href="#viewer" class="btn-sm btn-sm-view bracket-viewer-link" data-id="{{ b.id }}">View</a>
+                    {% if submitted|length < 2 %}
+                    <button class="btn-sm btn-sm-submit"
+                            onclick="openSubmitModal({{ b.id }}, '{{ b.bracket_name | replace("'", "\\'") }}')">
+                        🏆 Submit
+                    </button>
+                    {% else %}
+                    <button class="btn-sm btn-sm-submit" disabled title="Already submitted 2 brackets">
+                        🏆 Submit
+                    </button>
+                    {% endif %}
+                    <button class="btn-sm btn-sm-delete" onclick="deleteBracket({{ b.id }}, this)">🗑</button>
+                </div>
+            </div>
             {% endfor %}
         </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon">📝</div>
+            <p>No saved drafts yet. Build a bracket and save it to work on it later.</p>
+            <a href="/bracket" class="btn-new-bracket" style="display:inline-flex;">⚡ Build a Bracket</a>
+        </div>
         {% endif %}
     </div>
-    <div class="controls-right">
-        {% if brackets|length < 2 %}
-        <a href="/bracket" class="btn-new-bracket">➕ New Bracket</a>
-        {% endif %}
-        <span class="locked-badge">🔒 Submitted</span>
-        <div class="score-pill" id="activeScore"><small>Score</small>{{ brackets[0].score }}</div>
-    </div>
-</div>
 
-<!-- ========================= BRACKET PANELS ========================= -->
-{% for b in brackets %}
-<div class="bracket-panel {% if loop.first %}active{% endif %}" id="panel-{{ b.id }}">
-<div id="bracketContainer" class="bracket-container-inner">
-    <div class="bracket-region-tabs">
-        <button class="bracket-region-tab active" data-region="south">South</button>
-        <button class="bracket-region-tab" data-region="east">East</button>
-        <button class="bracket-region-tab" data-region="west">West</button>
-        <button class="bracket-region-tab" data-region="midwest">Midwest</button>
-        <button class="bracket-region-tab" data-region="finalfour">Final Four</button>
-    </div>
-    <div class="bracket-region-panel active" data-region="south">
-        <div class="bracket-columns">
-            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="south_r64_{{ b.id }}"></div></div>
-            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="south_r32_{{ b.id }}"></div></div>
-            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="south_s16_{{ b.id }}"></div></div>
-            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="south_e8_{{ b.id }}"></div></div>
-        </div>
-    </div>
-    <div class="bracket-region-panel" data-region="east">
-        <div class="bracket-columns">
-            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="east_r64_{{ b.id }}"></div></div>
-            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="east_r32_{{ b.id }}"></div></div>
-            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="east_s16_{{ b.id }}"></div></div>
-            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="east_e8_{{ b.id }}"></div></div>
-        </div>
-    </div>
-    <div class="bracket-region-panel" data-region="west">
-        <div class="bracket-columns">
-            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="west_r64_{{ b.id }}"></div></div>
-            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="west_r32_{{ b.id }}"></div></div>
-            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="west_s16_{{ b.id }}"></div></div>
-            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="west_e8_{{ b.id }}"></div></div>
-        </div>
-    </div>
-    <div class="bracket-region-panel" data-region="midwest">
-        <div class="bracket-columns">
-            <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64_{{ b.id }}"></div></div>
-            <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32_{{ b.id }}"></div></div>
-            <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16_{{ b.id }}"></div></div>
-            <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8_{{ b.id }}"></div></div>
-        </div>
-    </div>
-    <div class="bracket-region-panel final-four-panel" data-region="finalfour">
-        <div class="bracket-columns final-four-columns">
-            <div class="bracket-column round-ff round-ff-left"><h3>Semifinal</h3><div class="matchups" id="ff_left_{{ b.id }}"></div></div>
-            <div class="bracket-column round-champ round-champ-center">
-                <h3>Championship</h3>
-                <div class="matchups" id="championship_{{ b.id }}"></div>
-                <div class="national-champion"><h3 style="margin-top:16px;">National Champion</h3><div class="champion" id="champion_{{ b.id }}"></div></div>
+    <!-- ═══ BRACKET VIEWER ═══ -->
+    {% set all_viewable = submitted + saved %}
+    {% if all_viewable %}
+    <div class="viewer-section" id="viewer">
+        <div class="viewer-section-header">
+            <h2 id="viewerTitle">{{ all_viewable[0].bracket_name }}</h2>
+            <div class="bracket-tabs">
+                {% for b in all_viewable %}
+                <button class="bracket-tab {% if loop.first %}active{% endif %}"
+                        data-id="{{ b.id }}"
+                        data-name="{{ b.bracket_name }}">
+                    {{ b.bracket_name }}{% if b.is_submitted %}<span class="tab-badge">{{ b.score }}pts</span>{% endif %}
+                </button>
+                {% endfor %}
             </div>
-            <div class="bracket-column round-ff round-ff-right"><h3>Semifinal</h3><div class="matchups" id="ff_right_{{ b.id }}"></div></div>
+        </div>
+
+        {% for b in all_viewable %}
+        <div class="bracket-panel {% if loop.first %}active{% endif %}" id="panel-{{ b.id }}">
+            <div class="bracket-container-inner">
+                <div class="bracket-region-tabs">
+                    <button class="bracket-region-tab active" data-region="south">South</button>
+                    <button class="bracket-region-tab" data-region="east">East</button>
+                    <button class="bracket-region-tab" data-region="west">West</button>
+                    <button class="bracket-region-tab" data-region="midwest">Midwest</button>
+                    <button class="bracket-region-tab" data-region="finalfour">Final Four</button>
+                </div>
+                <div class="bracket-region-panel active" data-region="south">
+                    <div class="bracket-columns">
+                        <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="south_r64_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="south_r32_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="south_s16_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="south_e8_{{ b.id }}"></div></div>
+                    </div>
+                </div>
+                <div class="bracket-region-panel" data-region="east">
+                    <div class="bracket-columns">
+                        <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="east_r64_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="east_r32_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="east_s16_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="east_e8_{{ b.id }}"></div></div>
+                    </div>
+                </div>
+                <div class="bracket-region-panel" data-region="west">
+                    <div class="bracket-columns">
+                        <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="west_r64_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="west_r32_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="west_s16_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="west_e8_{{ b.id }}"></div></div>
+                    </div>
+                </div>
+                <div class="bracket-region-panel" data-region="midwest">
+                    <div class="bracket-columns">
+                        <div class="bracket-column round-r64"><h3>Round of 64</h3><div class="matchups" id="midwest_r64_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-r32"><h3>Round of 32</h3><div class="matchups" id="midwest_r32_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-s16"><h3>Sweet 16</h3><div class="matchups" id="midwest_s16_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-e8"><h3>Elite 8</h3><div class="matchups" id="midwest_e8_{{ b.id }}"></div></div>
+                    </div>
+                </div>
+                <div class="bracket-region-panel final-four-panel" data-region="finalfour">
+                    <div class="bracket-columns final-four-columns">
+                        <div class="bracket-column round-ff round-ff-left"><h3>Semifinal</h3><div class="matchups" id="ff_left_{{ b.id }}"></div></div>
+                        <div class="bracket-column round-champ round-champ-center">
+                            <h3>Championship</h3>
+                            <div class="matchups" id="championship_{{ b.id }}"></div>
+                            <div class="national-champion"><h3 style="margin-top:16px;">National Champion</h3><div class="champion" id="champion_{{ b.id }}"></div></div>
+                        </div>
+                        <div class="bracket-column round-ff round-ff-right"><h3>Semifinal</h3><div class="matchups" id="ff_right_{{ b.id }}"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div><!-- /page-wrap -->
+
+<!-- SUBMIT MODAL -->
+<div class="modal-overlay" id="submitModal">
+    <div class="modal-box">
+        <h2>Lock It In</h2>
+        <p>This bracket will be submitted to the leaderboard. You have <strong id="slotsLeft" style="color:#f0d060;">{{ 2 - submitted|length }}</strong> slot(s) remaining.</p>
+        <input type="hidden" id="submitBracketId" value="">
+        <label class="modal-label">Bracket Name</label>
+        <input class="modal-input" id="submitBracketName" type="text" maxlength="50">
+        <div class="modal-char-count"><span id="submitCharCount">0</span> / 50</div>
+        <div class="modal-actions">
+            <button class="modal-cancel" id="modalCancel">Cancel</button>
+            <button class="modal-confirm" id="modalConfirm">🏆 Submit to Leaderboard</button>
         </div>
     </div>
 </div>
-</div>
-{% endfor %}
 
-{% else %}
-<div class="empty-state">
-    <div class="icon">📋</div>
-    <h3>No Brackets Yet</h3>
-    <p>You haven't submitted any brackets yet.</p>
-    <a href="/bracket">⚡ Fill My Bracket</a>
-</div>
-{% endif %}
-
-<!-- ========================= JS ========================= -->
+<!-- JS -->
 <script>
-const allData     = {{ brackets | map(attribute='bracket_data') | list | tojson }};
-const allIds      = {{ brackets | map(attribute='id')           | list | tojson }};
+const allData     = {{ (submitted + saved) | map(attribute='bracket_data') | list | tojson }};
+const allIds      = {{ (submitted + saved) | map(attribute='id')           | list | tojson }};
 const trueResults = {{ (true_results or {}) | tojson }};
 
 const ROUND_ORDER = [
@@ -284,154 +675,107 @@ const CONTAINERS = [
     "midwest_r64","midwest_r32","midwest_s16","midwest_e8",
     "ff_left","ff_right","championship"
 ];
-
 const ROUND_DEPTH = {
-    "west_r64": 0, "south_r64": 0, "east_r64": 0, "midwest_r64": 0,
-    "west_r32": 1, "south_r32": 1, "east_r32": 1, "midwest_r32": 1,
-    "west_s16": 2, "south_s16": 2, "east_s16": 2, "midwest_s16": 2,
-    "west_e8":  3, "south_e8":  3, "east_e8":  3, "midwest_e8":  3,
-    "ff_left":  4, "ff_right":  4,
-    "championship": 5,
+    "west_r64":0,"south_r64":0,"east_r64":0,"midwest_r64":0,
+    "west_r32":1,"south_r32":1,"east_r32":1,"midwest_r32":1,
+    "west_s16":2,"south_s16":2,"east_s16":2,"midwest_s16":2,
+    "west_e8":3,"south_e8":3,"east_e8":3,"midwest_e8":3,
+    "ff_left":4,"ff_right":4,"championship":5
 };
 
-/* ── Build the set of teams that are "busted" ────────────────────────────
-   A team is busted if they lost in real life EARLIER than the user
-   predicted. Only then do they get a strikethrough.
-   Returns a Map: teamName → depth at which they actually lost.
-   The strikethrough is shown in rounds at that depth and later.           */
 function buildBustedTeams(data) {
-    // Step 1: find the real round each team lost in
     const realLostAt = new Map();
-
     CONTAINERS.forEach(cid => {
         const realWinners = trueResults[cid];
         if (!realWinners || !realWinners.length) return;
-
         const teams = data[cid];
         if (!teams || !teams.length) return;
-
         const depth = ROUND_DEPTH[cid];
         if (depth === undefined) return;
-
         for (let i = 0; i + 1 < teams.length; i += 2) {
-            const slotIndex = i / 2;
-            const realWinner = realWinners[slotIndex];
+            const realWinner = realWinners[i / 2];
             if (!realWinner) continue;
-
-            const t1 = teams[i], t2 = teams[i + 1];
-            const n1 = typeof t1 === 'string' ? t1 : (t1 && t1.name);
-            const n2 = typeof t2 === 'string' ? t2 : (t2 && t2.name);
-
+            const n1 = typeof teams[i]   === 'string' ? teams[i]   : teams[i]?.name;
+            const n2 = typeof teams[i+1] === 'string' ? teams[i+1] : teams[i+1]?.name;
             if (n1 && n1 !== realWinner && !realLostAt.has(n1)) realLostAt.set(n1, depth);
             if (n2 && n2 !== realWinner && !realLostAt.has(n2)) realLostAt.set(n2, depth);
         }
     });
-
-    // Step 2: find the last round the user had each team (their predicted exit)
     const userLastRound = new Map();
-
     CONTAINERS.forEach(cid => {
         const depth = ROUND_DEPTH[cid];
         if (depth === undefined) return;
-        const teams = data[cid];
-        if (!teams || !teams.length) return;
-        teams.forEach(t => {
-            const name = typeof t === 'string' ? t : (t && t.name);
+        (data[cid] || []).forEach(t => {
+            const name = typeof t === 'string' ? t : t?.name;
             if (!name) return;
-            if (!userLastRound.has(name) || depth > userLastRound.get(name)) {
-                userLastRound.set(name, depth);
-            }
+            if (!userLastRound.has(name) || depth > userLastRound.get(name)) userLastRound.set(name, depth);
         });
     });
     if (data.champion) {
-        const name = data.champion;
-        const d = 6;
-        if (!userLastRound.has(name) || d > userLastRound.get(name)) {
-            userLastRound.set(name, d);
-        }
+        const n = data.champion, d = 6;
+        if (!userLastRound.has(n) || d > userLastRound.get(n)) userLastRound.set(n, d);
     }
-
-    // Step 3: busted = team lost earlier than user predicted
     const busted = new Map();
     realLostAt.forEach((lostDepth, name) => {
-        const userDepth = userLastRound.get(name) ?? lostDepth;
-        if (lostDepth < userDepth) {
-            busted.set(name, lostDepth);
-        }
+        if (lostDepth < (userLastRound.get(name) ?? lostDepth)) busted.set(name, lostDepth);
     });
-
     return busted;
 }
 
 function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams) {
     const userPick = w1 ? n1 : w2 ? n2 : null;
     const actualWinner = (trueResults[cid] || [])[slotIndex];
-
     let c1 = '', c2 = '', check1 = false, check2 = false;
-
     if (actualWinner) {
-        const correct = (userPick === actualWinner);
+        const correct = userPick === actualWinner;
         c1 = (correct && n1 === userPick) ? ' correct' : (!correct && n1 === actualWinner) ? ' incorrect-actual' : '';
         c2 = (correct && n2 === userPick) ? ' correct' : (!correct && n2 === actualWinner) ? ' incorrect-actual' : '';
         check1 = correct && n1 === userPick;
         check2 = correct && n2 === userPick;
     }
-
-    const currentDepth = ROUND_DEPTH[cid] ?? -1;
-    const bust1 = bustedTeams.has(n1) && currentDepth >= bustedTeams.get(n1);
-    const bust2 = bustedTeams.has(n2) && currentDepth >= bustedTeams.get(n2);
+    const depth = ROUND_DEPTH[cid] ?? -1;
+    const bust1 = bustedTeams.has(n1) && depth >= bustedTeams.get(n1);
+    const bust2 = bustedTeams.has(n2) && depth >= bustedTeams.get(n2);
     if (bust1) c1 += ' busted';
     if (bust2) c2 += ' busted';
-
-    // Show the actual winner next to any busted team in this matchup slot
     const bustLabel1 = (bust1 && actualWinner && actualWinner !== n1) ? actualWinner : null;
     const bustLabel2 = (bust2 && actualWinner && actualWinner !== n2) ? actualWinner : null;
-
     return { c1, c2, check1, check2, bustLabel1, bustLabel2 };
 }
 
 function renderBracket(data, bid) {
     const bustedTeams = buildBustedTeams(data);
-
     CONTAINERS.forEach(cid => {
         const teams = data[cid];
         if (!teams || !teams.length) return;
-
-        /* which names advance out of this round? */
         const winners = new Set();
         ROUND_ORDER.filter(([c]) => c === cid).forEach(([, nxt]) => {
             (data[nxt] || []).forEach(t => winners.add(typeof t === 'string' ? t : t.name));
         });
         if (cid === 'championship' && data.champion) winners.add(data.champion);
-
         const container = document.getElementById(cid + '_' + bid);
         if (!container) return;
         container.innerHTML = '';
-
         for (let i = 0; i + 1 < teams.length; i += 2) {
-            const t1 = teams[i], t2 = teams[i + 1];
+            const t1 = teams[i], t2 = teams[i+1];
             const n1 = typeof t1 === 'string' ? t1 : t1.name;
             const s1 = typeof t1 === 'string' ? '' : (t1.seed || '');
             const n2 = typeof t2 === 'string' ? t2 : t2.name;
             const s2 = typeof t2 === 'string' ? '' : (t2.seed || '');
             const w1 = winners.has(n1), w2 = winners.has(n2);
-
-            const slotIndex = i / 2;
-            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams);
-
+            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(w1, w2, n1, n2, i/2, cid, bustedTeams);
             const div = document.createElement('div');
             div.className = 'matchup';
             div.innerHTML =
-                `<div class="team ${w1 ? 'selected' : w2 ? 'eliminated' : ''}${c1}">
-                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>${check1 ? ' <span class="check-mark">✓</span>' : ''}${bustLabel1 ? ` <span class="bust-actual">${bustLabel1}</span>` : ''}
+                `<div class="team ${w1?'selected':w2?'eliminated':''}${c1}">
+                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>${check1?' <span class="check-mark">✓</span>':''}${bustLabel1?` <span class="bust-actual">${bustLabel1}</span>`:''}
                 </div>` +
-                `<div class="team ${w2 ? 'selected' : w1 ? 'eliminated' : ''}${c2}">
-                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>${check2 ? ' <span class="check-mark">✓</span>' : ''}${bustLabel2 ? ` <span class="bust-actual">${bustLabel2}</span>` : ''}
+                `<div class="team ${w2?'selected':w1?'eliminated':''}${c2}">
+                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>${check2?' <span class="check-mark">✓</span>':''}${bustLabel2?` <span class="bust-actual">${bustLabel2}</span>`:''}
                 </div>`;
             container.appendChild(div);
         }
     });
-
     const ch = document.getElementById('champion_' + bid);
     const actualChamp = (trueResults['championship'] || [])[0];
     if (ch && data.champion) {
@@ -439,13 +783,11 @@ function renderBracket(data, bid) {
         const nameHtml = champBusted
             ? `<span class="team-name" style="text-decoration:line-through;opacity:0.6;">${data.champion}</span>`
             : data.champion;
-        if (actualChamp && data.champion === actualChamp) {
-            ch.innerHTML = nameHtml + ' <span class="check-mark">✓</span>';
-        } else if (actualChamp && data.champion !== actualChamp) {
-            ch.innerHTML = nameHtml + ` <span class="bust-actual">${actualChamp}</span>`;
-        } else {
-            ch.innerHTML = nameHtml;
-        }
+        ch.innerHTML = actualChamp && data.champion === actualChamp
+            ? nameHtml + ' <span class="check-mark">✓</span>'
+            : actualChamp && data.champion !== actualChamp
+                ? nameHtml + ` <span class="bust-actual">${actualChamp}</span>`
+                : nameHtml;
     }
 }
 
@@ -453,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
     allData.forEach((d, i) => renderBracket(d, allIds[i]));
 });
 
-/* Region tab switching (per bracket panel) */
+/* Region tab switching */
 document.querySelectorAll('.bracket-container-inner').forEach(container => {
     container.querySelectorAll('.bracket-region-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -461,8 +803,7 @@ document.querySelectorAll('.bracket-container-inner').forEach(container => {
             container.querySelectorAll('.bracket-region-tab').forEach(t => t.classList.remove('active'));
             container.querySelectorAll('.bracket-region-panel').forEach(p => p.classList.remove('active'));
             tab.classList.add('active');
-            const panel = container.querySelector(`.bracket-region-panel[data-region="${region}"]`);
-            if (panel) panel.classList.add('active');
+            container.querySelector(`.bracket-region-panel[data-region="${region}"]`)?.classList.add('active');
         });
     });
 });
@@ -473,11 +814,78 @@ document.querySelectorAll('.bracket-tab').forEach(btn => {
         document.querySelectorAll('.bracket-tab').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.bracket-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('panel-' + btn.dataset.id).classList.add('active');
-        document.getElementById('activeName').textContent = btn.dataset.name;
-        document.getElementById('activeScore').innerHTML = `<small>Score</small>${btn.dataset.score}`;
+        document.getElementById('panel-' + btn.dataset.id)?.classList.add('active');
+        document.getElementById('viewerTitle').textContent = btn.dataset.name;
     });
 });
+
+/* View links — scroll to viewer and activate the right tab */
+document.querySelectorAll('.bracket-viewer-link').forEach(link => {
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        const tab = document.querySelector(`.bracket-tab[data-id="${link.dataset.id}"]`);
+        if (tab) tab.click();
+        document.getElementById('viewer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+});
+
+/* Submit modal */
+const submitModal     = document.getElementById('submitModal');
+const submitBracketId = document.getElementById('submitBracketId');
+const submitNameInput = document.getElementById('submitBracketName');
+const submitCharCount = document.getElementById('submitCharCount');
+const modalCancel     = document.getElementById('modalCancel');
+const modalConfirm    = document.getElementById('modalConfirm');
+
+function openSubmitModal(bracketId, currentName) {
+    submitBracketId.value = bracketId;
+    submitNameInput.value = currentName;
+    submitCharCount.textContent = currentName.length;
+    submitModal.classList.add('open');
+    submitNameInput.focus();
+}
+modalCancel.addEventListener('click', () => submitModal.classList.remove('open'));
+submitModal.addEventListener('click', e => { if (e.target === submitModal) submitModal.classList.remove('open'); });
+submitNameInput.addEventListener('input', () => { submitCharCount.textContent = submitNameInput.value.length; });
+
+modalConfirm.addEventListener('click', () => {
+    const bracketName = submitNameInput.value.trim() || 'My Bracket';
+    modalConfirm.disabled = true;
+    modalConfirm.textContent = 'Submitting…';
+    fetch('/submit_bracket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bracket_id: parseInt(submitBracketId.value), bracket_name: bracketName })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { alert(data.error); }
+        else { window.location.reload(); }
+    })
+    .catch(() => alert('Submission failed. Please try again.'))
+    .finally(() => {
+        modalConfirm.disabled = false;
+        modalConfirm.textContent = '🏆 Submit to Leaderboard';
+        submitModal.classList.remove('open');
+    });
+});
+
+/* Delete saved bracket */
+function deleteBracket(bracketId, btn) {
+    if (!confirm('Delete this saved bracket? This cannot be undone.')) return;
+    btn.disabled = true;
+    fetch('/delete_bracket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bracket_id: bracketId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { alert(data.error); btn.disabled = false; }
+        else { window.location.reload(); }
+    })
+    .catch(() => { alert('Delete failed.'); btn.disabled = false; });
+}
 </script>
 
 </body>
