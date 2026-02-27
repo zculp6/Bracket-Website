@@ -319,10 +319,20 @@ def save_bracket():
     """Save a draft bracket (not submitted to leaderboard). Up to 25 total brackets per user."""
     data = request.get_json(force=True)
     bracket_data = data.get("bracket")
-    bracket_name = (data.get("bracket_name") or "My Bracket").strip()
+    bracket_name = (data.get("bracket_name") or "").strip()
+
+    if not bracket_name:
+        return jsonify({"error": "Please enter a bracket name before saving."}), 400
 
     if len(bracket_name) > 50:
         return jsonify({"error": "Bracket name must be 50 characters or fewer"}), 400
+
+    existing_names = [
+        (b.bracket_name or "").strip().lower()
+        for b in Bracket.query.with_entities(Bracket.bracket_name).filter_by(user_id=current_user.id).all()
+    ]
+    if bracket_name.lower() in existing_names:
+        return jsonify({"error": "You already have a bracket with that name. Please choose a different name."}), 400
 
     if not bracket_data:
         return jsonify({"error": "No bracket data provided"}), 400

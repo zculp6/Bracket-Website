@@ -886,7 +886,12 @@
     });
 
     modalConfirm.addEventListener('click', () => {
-        const bracketName = nameInput.value.trim() || 'My Bracket';
+        const bracketName = saveNameInput.value.trim();
+        if (!bracketName) {
+            alert('Please enter a bracket name before saving.');
+            saveNameInput.focus();
+            return;
+        }
         const bracketData = buildBracketJSON();
 
         modalConfirm.disabled = true;

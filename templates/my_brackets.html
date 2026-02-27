@@ -538,8 +538,9 @@
                 <div class="saved-actions">
                     <a href="#viewer" class="btn-sm btn-sm-view bracket-viewer-link" data-id="{{ b.id }}">View</a>
                     {% if submitted|length < 2 %}
-                    <button class="btn-sm btn-sm-submit"
-                            onclick="openSubmitModal({{ b.id }}, '{{ b.bracket_name | replace("'", "\\'") }}')">
+                    <button class="btn-sm btn-sm-submit open-submit-modal-btn"
+                            data-bracket-id="{{ b.id }}"
+                            data-bracket-name="{{ b.bracket_name }}">
                         🏆 Submit
                     </button>
                     {% else %}
@@ -852,6 +853,12 @@ function openSubmitModal(bracketId, currentName) {
     submitModal.classList.add('open');
     submitNameInput.focus();
 }
+document.querySelectorAll('.open-submit-modal-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        openSubmitModal(parseInt(btn.dataset.bracketId, 10), btn.dataset.bracketName || '');
+    });
+});
+
 modalCancel.addEventListener('click', () => submitModal.classList.remove('open'));
 submitModal.addEventListener('click', e => { if (e.target === submitModal) submitModal.classList.remove('open'); });
 submitNameInput.addEventListener('input', () => { submitCharCount.textContent = submitNameInput.value.length; });
