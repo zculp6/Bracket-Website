@@ -111,7 +111,15 @@ def bracket_page():
                 ordered.append(seed_map[seed])
         teams_by_region[region] = ordered
 
-    return render_template("bracket.html", teams=teams_by_region)
+    saved_count = Bracket.query.filter_by(user_id=current_user.id, is_submitted=False).count()
+    submitted_count = Bracket.query.filter_by(user_id=current_user.id, is_submitted=True).count()
+
+    return render_template(
+        "bracket.html",
+        teams=teams_by_region,
+        saved_count=saved_count,
+        submitted_count=submitted_count
+    )
 
 @app.route("/bracket/<int:bracket_id>")
 def view_bracket(bracket_id):
@@ -337,8 +345,8 @@ def save_bracket():
     if not bracket_data:
         return jsonify({"error": "No bracket data provided"}), 400
 
-    total = Bracket.query.filter_by(user_id=current_user.id).count()
-    if total >= 25:
+    saved_count = Bracket.query.filter_by(user_id=current_user.id, is_submitted=False).count()
+    if saved_count >= 25:
         return jsonify({"error": "You have reached the maximum of 25 saved brackets."}), 400
 
     new_bracket = Bracket(
@@ -396,10 +404,6 @@ def submit_bracket():
         if not bracket_data:
             return jsonify({"error": "No bracket data provided"}), 400
 
-        total = Bracket.query.filter_by(user_id=current_user.id).count()
-        if total >= 25:
-            return jsonify({"error": "You have reached the maximum of 25 saved brackets."}), 400
-
         b = Bracket(
             user_id=current_user.id,
             entry_number=entry_number,
@@ -433,6 +437,41 @@ def my_brackets_page():
         brackets=submitted,      # kept for backward compat with view rendering
         true_results=true_results
     )
+
+@app.route("/rename_bracket", methods=["POST"])
+@login_required
+def rename_bracket():
+    """Rename any bracket (saved or submitted) owned by the current user."""
+    data = request.get_json(force=True)
+    bracket_id = data.get("bracket_id")
+    bracket_name = (data.get("bracket_name") or "").strip()
+
+    if not bracket_id:
+        return jsonify({"error": "bracket_id required"}), 400
+
+    if not bracket_name:
+        return jsonify({"error": "Please enter a bracket name."}), 400
+
+    if len(bracket_name) > 50:
+        return jsonify({"error": "Bracket name must be 50 characters or fewer"}), 400
+
+    existing_names = [
+        (b.bracket_name or "").strip().lower()
+        for b in Bracket.query.with_entities(Bracket.bracket_name)
+        .filter(Bracket.user_id == current_user.id, Bracket.id != bracket_id)
+        .all()
+    ]
+    if bracket_name.lower() in existing_names:
+        return jsonify({"error": "You already have a bracket with that name. Please choose a different name."}), 400
+
+    b = Bracket.query.filter_by(id=bracket_id, user_id=current_user.id).first()
+    if not b:
+        return jsonify({"error": "Bracket not found."}), 404
+
+    b.bracket_name = bracket_name
+    db.session.commit()
+    return jsonify({"message": "Bracket renamed."})
+
 
 @app.route("/delete_bracket", methods=["POST"])
 @login_required

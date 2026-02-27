@@ -476,9 +476,7 @@
     <!-- PAGE HEADER -->
     <div class="page-header">
         <h1>My Brackets</h1>
-        {% if total_count < 25 %}
         <a href="/bracket" class="btn-new-bracket">⚡ Build New Bracket</a>
-        {% endif %}
     </div>
 
     <!-- ═══ SUBMITTED BRACKETS ═══ -->
@@ -502,7 +500,12 @@
                         <strong>Champion:</strong>
                         {{ b.bracket_data.get('champion', '—') if b.bracket_data else '—' }}
                     </div>
-                    <a href="#viewer" class="btn-view bracket-viewer-link" data-id="{{ b.id }}">View →</a>
+                    <div class="saved-actions">
+                        <a href="#viewer" class="btn-view bracket-viewer-link" data-id="{{ b.id }}">View →</a>
+                        <button class="btn-sm btn-sm-view open-rename-modal-btn"
+                                data-bracket-id="{{ b.id }}"
+                                data-bracket-name="{{ b.bracket_name }}">✏️ Rename</button>
+                    </div>
                 </div>
             </div>
         {% else %}
@@ -528,7 +531,7 @@
     <div class="saved-section">
         <div class="section-header">
             <h2>Saved Drafts</h2>
-            <span class="section-counter">{{ saved|length }} / {{ 25 - submitted|length }}</span>
+            <span class="section-counter">{{ saved|length }} / 25</span>
         </div>
 
         {% if saved %}
@@ -540,6 +543,9 @@
                 <span class="saved-champion">🏀 {{ b.bracket_data.get('champion', 'No champion') if b.bracket_data else 'No champion' }}</span>
                 <div class="saved-actions">
                     <a href="#viewer" class="btn-sm btn-sm-view bracket-viewer-link" data-id="{{ b.id }}">View</a>
+                    <button class="btn-sm btn-sm-view open-rename-modal-btn"
+                            data-bracket-id="{{ b.id }}"
+                            data-bracket-name="{{ b.bracket_name }}">✏️ Rename</button>
                     {% if submitted|length < 2 %}
                     <button class="btn-sm btn-sm-submit open-submit-modal-btn"
                             data-bracket-id="{{ b.id }}"
@@ -647,7 +653,7 @@
 <div class="modal-overlay" id="submitModal">
     <div class="modal-box">
         <h2>Lock It In</h2>
-        <p>This bracket will be submitted to the leaderboard. You have <strong id="slotsLeft" style="color:#f0d060;">{{ 2 - submitted|length }}</strong> slot(s) remaining.</p>
+        <p>This bracket will be submitted to the leaderboard. You have <strong id="slotsLeft" style="color:#f0d060;">{{ 2 - submitted|length }}</strong> slot(s) remaining.<br><strong style="color:#ffd1a8;">Once bracket is submitted it cannot be changed or unsubmitted</strong></p>
         <input type="hidden" id="submitBracketId" value="">
         <label class="modal-label">Bracket Name</label>
         <input class="modal-input" id="submitBracketName" type="text" maxlength="50">
@@ -655,6 +661,22 @@
         <div class="modal-actions">
             <button class="modal-cancel" id="modalCancel">Cancel</button>
             <button class="modal-confirm" id="modalConfirm">🏆 Submit to Leaderboard</button>
+        </div>
+    </div>
+</div>
+
+<!-- RENAME MODAL -->
+<div class="modal-overlay" id="renameModal">
+    <div class="modal-box">
+        <h2>Rename Bracket</h2>
+        <p>Update your bracket name. This works for both saved and submitted brackets.</p>
+        <input type="hidden" id="renameBracketId" value="">
+        <label class="modal-label">Bracket Name</label>
+        <input class="modal-input" id="renameBracketName" type="text" maxlength="50">
+        <div class="modal-char-count"><span id="renameCharCount">0</span> / 50</div>
+        <div class="modal-actions">
+            <button class="modal-cancel" id="renameCancel">Cancel</button>
+            <button class="modal-confirm" id="renameConfirm">💾 Save Name</button>
         </div>
     </div>
 </div>
@@ -868,6 +890,7 @@ submitNameInput.addEventListener('input', () => { submitCharCount.textContent = 
 
 modalConfirm.addEventListener('click', () => {
     const bracketName = submitNameInput.value.trim() || 'My Bracket';
+    if (!confirm('Once bracket is submitted it cannot be changed or unsubmitted')) return;
     modalConfirm.disabled = true;
     modalConfirm.textContent = 'Submitting…';
     fetch('/submit_bracket', {
@@ -885,6 +908,61 @@ modalConfirm.addEventListener('click', () => {
         modalConfirm.disabled = false;
         modalConfirm.textContent = '🏆 Submit to Leaderboard';
         submitModal.classList.remove('open');
+    });
+});
+
+/* Rename bracket */
+const renameModal = document.getElementById('renameModal');
+const renameBracketId = document.getElementById('renameBracketId');
+const renameNameInput = document.getElementById('renameBracketName');
+const renameCharCount = document.getElementById('renameCharCount');
+const renameCancel = document.getElementById('renameCancel');
+const renameConfirm = document.getElementById('renameConfirm');
+
+function openRenameModal(bracketId, currentName) {
+    renameBracketId.value = bracketId;
+    renameNameInput.value = currentName || '';
+    renameCharCount.textContent = renameNameInput.value.length;
+    renameModal.classList.add('open');
+    renameNameInput.focus();
+}
+
+document.querySelectorAll('.open-rename-modal-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        openRenameModal(parseInt(btn.dataset.bracketId, 10), btn.dataset.bracketName || '');
+    });
+});
+
+renameCancel.addEventListener('click', () => renameModal.classList.remove('open'));
+renameModal.addEventListener('click', e => { if (e.target === renameModal) renameModal.classList.remove('open'); });
+renameNameInput.addEventListener('input', () => { renameCharCount.textContent = renameNameInput.value.length; });
+renameNameInput.addEventListener('keydown', e => { if (e.key === 'Enter') renameConfirm.click(); });
+
+renameConfirm.addEventListener('click', () => {
+    const bracketName = renameNameInput.value.trim();
+    if (!bracketName) {
+        alert('Please enter a bracket name.');
+        renameNameInput.focus();
+        return;
+    }
+
+    renameConfirm.disabled = true;
+    renameConfirm.textContent = 'Saving…';
+
+    fetch('/rename_bracket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bracket_id: parseInt(renameBracketId.value, 10), bracket_name: bracketName })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { alert(data.error); }
+        else { window.location.reload(); }
+    })
+    .catch(() => alert('Rename failed. Please try again.'))
+    .finally(() => {
+        renameConfirm.disabled = false;
+        renameConfirm.textContent = '💾 Save Name';
     });
 });
 

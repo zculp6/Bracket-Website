@@ -645,6 +645,10 @@
     const saveConfirmBtn = document.getElementById('saveConfirmBtn');
 
     document.getElementById('saveBracketButton').addEventListener('click', () => {
+        if (savedCount >= 25) {
+            alert('You have reached the maximum of 25 saved brackets.');
+            return;
+        }
         saveModal.classList.add('open');
         saveNameInput.value = '';
         saveCharCount.textContent = '0';
@@ -734,7 +738,7 @@
 <div class="modal-overlay" id="submitModal">
     <div class="modal-box">
         <h2>Name Your Bracket</h2>
-        <p>Give your bracket a name before locking it in.</p>
+        <p>Give your bracket a name before locking it in.<br><strong style="color:#ffd1a8;">Once bracket is submitted it cannot be changed or unsubmitted</strong></p>
         <label class="modal-label" for="bracketNameInput">Bracket Name</label>
         <input
             class="modal-input"
@@ -763,6 +767,8 @@
 
     /* ── STATE ── */
     let selectedStrategy = null;
+    const savedCount = {{ saved_count|default(0) }};
+    const submittedCount = {{ submitted_count|default(0) }};
 
     /* ── DOM REFS ── */
     const trigger      = document.getElementById('strategyTrigger');
@@ -856,6 +862,10 @@
     const modalConfirm = document.getElementById('modalConfirm');
 
     document.getElementById('submitBracketButton').addEventListener('click', () => {
+        if (submittedCount >= 2) {
+            alert("You have already submitted 2 brackets. That's the maximum.");
+            return;
+        }
         const { valid, missing } = validateAllPicks();
         if (!valid) {
             alert(`Please complete all matchups before submitting.\n\nMissing picks:\n• ${missing.join('\n• ')}`);
@@ -886,10 +896,13 @@
     });
 
     modalConfirm.addEventListener('click', () => {
-        const bracketName = saveNameInput.value.trim();
+        const bracketName = nameInput.value.trim();
         if (!bracketName) {
-            alert('Please enter a bracket name before saving.');
-            saveNameInput.focus();
+            alert('Please enter a bracket name before submitting.');
+            nameInput.focus();
+            return;
+        }
+        if (!confirm('Once bracket is submitted it cannot be changed or unsubmitted')) {
             return;
         }
         const bracketData = buildBracketJSON();
