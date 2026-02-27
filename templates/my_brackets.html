@@ -240,6 +240,13 @@
             flex-shrink: 0;
         }
 
+        .slot-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
         .btn-sm {
             padding: 6px 14px;
             font-size: 12px; font-weight: 700;
@@ -501,10 +508,12 @@
                         {{ b.bracket_data.get('champion', '—') if b.bracket_data else '—' }}
                     </div>
                     <div class="saved-actions">
+                        <div class="slot-actions">
                         <a href="#viewer" class="btn-view bracket-viewer-link" data-id="{{ b.id }}">View →</a>
                         <button class="btn-sm btn-sm-view open-rename-modal-btn"
                                 data-bracket-id="{{ b.id }}"
                                 data-bracket-name="{{ b.bracket_name }}">✏️ Rename</button>
+                    </div>
                     </div>
                 </div>
             </div>
