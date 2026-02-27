@@ -656,35 +656,65 @@ document.querySelectorAll('.bracket-region-tab').forEach(tab => {
     const nameInput = document.getElementById('bracketNameInput');
     const modalConfirm = document.getElementById('modalConfirm');
 
+    // Step 1: Trigger the Modal
     document.getElementById('submitBracketButton').addEventListener('click', () => {
-        if (submittedCount >= 2) { alert("Maximum 2 submissions reached."); return; }
+        if (submittedCount >= 2) {
+            alert("Maximum 2 submissions reached.");
+            return;
+        }
+
         const { valid, missing } = validateAllPicks();
-        if (!valid) { alert(`Complete the bracket first:\n• ${missing.join('\n• ')}`); return; }
+        if (!valid) {
+            alert(`Complete the bracket first:\n• ${missing.join('\n• ')}`);
+            return;
+        }
+
+        // Just open the modal here; don't fetch yet!
         submitModal.classList.add('open');
         nameInput.value = '';
         nameInput.focus();
     });
 
-    document.getElementById('modalCancel').addEventListener('click', () => submitModal.classList.remove('open'));
-
+    // Step 2: Final Submission from inside the Modal
     modalConfirm.addEventListener('click', () => {
         const bracketName = nameInput.value.trim();
-        if (!bracketName) { alert('Enter a name.'); return; }
-        if (!confirm('Submit? This cannot be changed.')) return;
 
+        if (!bracketName) {
+            alert('Please enter a name for your bracket.');
+            return;
+        }
+
+        // Disable button to prevent double-clicks
         modalConfirm.disabled = true;
+        modalConfirm.textContent = "Submitting...";
+
+        const bracketData = buildBracketJSON();
+
         fetch("/submit_bracket", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ bracket: buildBracketJSON(), bracket_name: bracketName })
+            body: JSON.stringify({
+                bracket: bracketData,
+                bracket_name: bracketName
+            })
         })
         .then(res => res.json())
         .then(data => {
-            if (data.error) alert(data.error);
-            else window.location.href = '/my_brackets';
+            if (data.error) {
+                alert(data.error);
+                modalConfirm.disabled = false;
+                modalConfirm.textContent = "🏀 Lock It In";
+            } else {
+                // Success! Redirect to the brackets page
+                window.location.href = '/my_brackets';
+            }
         })
-        .catch(() => alert("Submission failed."))
-        .finally(() => modalConfirm.disabled = false);
+        .catch((err) => {
+            console.error(err);
+            alert("Submission failed. Please try again.");
+            modalConfirm.disabled = false;
+            modalConfirm.textContent = "🏀 Lock It In";
+        });
     });
 
     document.getElementById('resetBracketButton').addEventListener('click', () => resetBracket());
