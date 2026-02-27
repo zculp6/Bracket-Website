@@ -757,16 +757,6 @@
 <script src="{{ url_for('static', filename='js/autofill.js') }}"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.bracket-region-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const region = tab.dataset.region;
-            document.querySelectorAll('.bracket-region-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.bracket-region-panel').forEach(p => p.classList.remove('active'));
-            tab.classList.add('active');
-            const panel = document.querySelector(`.bracket-region-panel[data-region="${region}"]`);
-            if (panel) panel.classList.add('active');
-
     /* ── INITIAL TEAM LOAD ── */
     const initialTeams = {{ teams | tojson }};
     document.addEventListener("DOMContentLoaded", () => loadInitialTeams(initialTeams));
