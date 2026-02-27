@@ -416,12 +416,26 @@ function renderBracket(data, bid) {
             // but with the strikethrough applied via .busted on the team-name
             const div = document.createElement('div');
             div.className = 'matchup';
+            const actualWinnerHere = (trueResults[cid] || [])[slotIndex];
+            const currentDepth = ROUND_DEPTH[cid] ?? -1;
+
+            // Show "→ ActualTeam" next to a busted selected team,
+            // but only when the actual winner is NOT already one of the two teams shown
+            const b1 = bustedTeams.has(n1) && currentDepth >= bustedTeams.get(n1);
+            const b2 = bustedTeams.has(n2) && currentDepth >= bustedTeams.get(n2);
+            const actualNotShown = actualWinnerHere && actualWinnerHere !== n1 && actualWinnerHere !== n2;
+
+            const bust1 = w1 && b1 && actualNotShown
+                ? ` <span class="bust-actual">→ ${actualWinnerHere}</span>` : '';
+            const bust2 = w2 && b2 && actualNotShown
+                ? ` <span class="bust-actual">→ ${actualWinnerHere}</span>` : '';
+
             div.innerHTML =
                 `<div class="team ${w1 ? 'selected' : w2 ? 'eliminated' : ''}${c1}">
-                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>${check1 ? ' <span class="check-mark">✓</span>' : ''}
+                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>${check1 ? ' <span class="check-mark">✓</span>' : ''}${bust1}
                 </div>` +
                 `<div class="team ${w2 ? 'selected' : w1 ? 'eliminated' : ''}${c2}">
-                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>${check2 ? ' <span class="check-mark">✓</span>' : ''}
+                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>${check2 ? ' <span class="check-mark">✓</span>' : ''}${bust2}
                 </div>`;
             container.appendChild(div);
         }
