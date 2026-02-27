@@ -299,153 +299,120 @@ const ROUND_DEPTH = {
    predicted. Only then do they get a strikethrough.
    Returns a Map: teamName → depth at which they actually lost.
    The strikethrough is shown in rounds at that depth and later.           */
-function buildBustedTeams(data) {
-    // Step 1: find the real round each team lost in
-    const realLostAt = new Map();
 
+function buildBustedTeams(data) {
+    const realLostAt = new Map();
+    const eliminatedBy = new Map();
     CONTAINERS.forEach(cid => {
         const realWinners = trueResults[cid];
         if (!realWinners || !realWinners.length) return;
-
         const teams = data[cid];
         if (!teams || !teams.length) return;
-
         const depth = ROUND_DEPTH[cid];
         if (depth === undefined) return;
-
         for (let i = 0; i + 1 < teams.length; i += 2) {
-            const slotIndex = i / 2;
-            const realWinner = realWinners[slotIndex];
+            const realWinner = realWinners[i / 2];
             if (!realWinner) continue;
-
-            const t1 = teams[i], t2 = teams[i + 1];
-            const n1 = typeof t1 === 'string' ? t1 : (t1 && t1.name);
-            const n2 = typeof t2 === 'string' ? t2 : (t2 && t2.name);
-
-            if (n1 && n1 !== realWinner && !realLostAt.has(n1)) realLostAt.set(n1, depth);
-            if (n2 && n2 !== realWinner && !realLostAt.has(n2)) realLostAt.set(n2, depth);
+            const n1 = typeof teams[i]   === 'string' ? teams[i]   : teams[i]?.name;
+            const n2 = typeof teams[i+1] === 'string' ? teams[i+1] : teams[i+1]?.name;
+            if (n1 && n1 !== realWinner && !realLostAt.has(n1)) {
+                realLostAt.set(n1, depth);
+                eliminatedBy.set(n1, realWinner);
+            }
+            if (n2 && n2 !== realWinner && !realLostAt.has(n2)) {
+                realLostAt.set(n2, depth);
+                eliminatedBy.set(n2, realWinner);
+            }
         }
     });
-
-    // Step 2: find the last round the user had each team (their predicted exit)
     const userLastRound = new Map();
-
     CONTAINERS.forEach(cid => {
         const depth = ROUND_DEPTH[cid];
         if (depth === undefined) return;
-        const teams = data[cid];
-        if (!teams || !teams.length) return;
-        teams.forEach(t => {
-            const name = typeof t === 'string' ? t : (t && t.name);
+        (data[cid] || []).forEach(t => {
+            const name = typeof t === 'string' ? t : t?.name;
             if (!name) return;
-            if (!userLastRound.has(name) || depth > userLastRound.get(name)) {
-                userLastRound.set(name, depth);
-            }
+            if (!userLastRound.has(name) || depth > userLastRound.get(name)) userLastRound.set(name, depth);
         });
     });
     if (data.champion) {
-        const name = data.champion;
-        const d = 6;
-        if (!userLastRound.has(name) || d > userLastRound.get(name)) {
-            userLastRound.set(name, d);
-        }
+        const n = data.champion, d = 6;
+        if (!userLastRound.has(n) || d > userLastRound.get(n)) userLastRound.set(n, d);
     }
-
-    // Step 3: busted = team lost earlier than user predicted
     const busted = new Map();
     realLostAt.forEach((lostDepth, name) => {
-        const userDepth = userLastRound.get(name) ?? lostDepth;
-        if (lostDepth < userDepth) {
-            busted.set(name, lostDepth);
-        }
+        if (lostDepth < (userLastRound.get(name) ?? lostDepth)) busted.set(name, lostDepth);
     });
-
-    return busted;
+    return {busted, eliminatedBy};
 }
 
-function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams) {
+function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
+    const { busted, eliminatedBy } = bustedData;
     const userPick = w1 ? n1 : w2 ? n2 : null;
     const actualWinner = (trueResults[cid] || [])[slotIndex];
-
     let c1 = '', c2 = '', check1 = false, check2 = false;
-
     if (actualWinner) {
-        const correct = (userPick === actualWinner);
+        const correct = userPick === actualWinner;
         c1 = (correct && n1 === userPick) ? ' correct' : (!correct && n1 === actualWinner) ? ' incorrect-actual' : '';
         c2 = (correct && n2 === userPick) ? ' correct' : (!correct && n2 === actualWinner) ? ' incorrect-actual' : '';
         check1 = correct && n1 === userPick;
         check2 = correct && n2 === userPick;
     }
-
-    const currentDepth = ROUND_DEPTH[cid] ?? -1;
-    const bust1 = bustedTeams.has(n1) && currentDepth >= bustedTeams.get(n1);
-    const bust2 = bustedTeams.has(n2) && currentDepth >= bustedTeams.get(n2);
+    const depth = ROUND_DEPTH[cid] ?? -1;
+    const bust1 = busted.has(n1) && depth >= busted.get(n1);
+    const bust2 = busted.has(n2) && depth >= busted.get(n2);
     if (bust1) c1 += ' busted';
     if (bust2) c2 += ' busted';
-
-    // Show the actual winner next to any busted team in this matchup slot
-    const bustLabel1 = (bust1 && actualWinner && actualWinner !== n1) ? actualWinner : null;
-    const bustLabel2 = (bust2 && actualWinner && actualWinner !== n2) ? actualWinner : null;
-
+    const bustLabel1 = bust1 ? (eliminatedBy.get(n1) || null) : null;
+    const bustLabel2 = bust2 ? (eliminatedBy.get(n2) || null) : null;
     return { c1, c2, check1, check2, bustLabel1, bustLabel2 };
 }
 
 function renderBracket(data, bid) {
-    const bustedTeams = buildBustedTeams(data);
-
+    const bustedData = buildBustedTeams(data);
     CONTAINERS.forEach(cid => {
         const teams = data[cid];
         if (!teams || !teams.length) return;
-
-        /* which names advance out of this round? */
         const winners = new Set();
         ROUND_ORDER.filter(([c]) => c === cid).forEach(([, nxt]) => {
             (data[nxt] || []).forEach(t => winners.add(typeof t === 'string' ? t : t.name));
         });
         if (cid === 'championship' && data.champion) winners.add(data.champion);
-
         const container = document.getElementById(cid + '_' + bid);
         if (!container) return;
         container.innerHTML = '';
-
         for (let i = 0; i + 1 < teams.length; i += 2) {
-            const t1 = teams[i], t2 = teams[i + 1];
+            const t1 = teams[i], t2 = teams[i+1];
             const n1 = typeof t1 === 'string' ? t1 : t1.name;
             const s1 = typeof t1 === 'string' ? '' : (t1.seed || '');
             const n2 = typeof t2 === 'string' ? t2 : t2.name;
             const s2 = typeof t2 === 'string' ? '' : (t2.seed || '');
             const w1 = winners.has(n1), w2 = winners.has(n2);
-
-            const slotIndex = i / 2;
-            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedTeams);
-
+            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(w1, w2, n1, n2, i/2, cid, bustedData);
             const div = document.createElement('div');
             div.className = 'matchup';
             div.innerHTML =
-                `<div class="team ${w1 ? 'selected' : w2 ? 'eliminated' : ''}${c1}">
-                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>${check1 ? ' <span class="check-mark">✓</span>' : ''}${bustLabel1 ? ` <span class="bust-actual">${bustLabel1}</span>` : ''}
+                `<div class="team ${w1?'selected':w2?'eliminated':''}${c1}">
+                    <span class="seed">${s1}</span><span class="team-name">${n1}</span>${check1?' <span class="check-mark">✓</span>':''}${bustLabel1?` <span class="bust-actual">${bustLabel1}</span>`:''}
                 </div>` +
-                `<div class="team ${w2 ? 'selected' : w1 ? 'eliminated' : ''}${c2}">
-                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>${check2 ? ' <span class="check-mark">✓</span>' : ''}${bustLabel2 ? ` <span class="bust-actual">${bustLabel2}</span>` : ''}
+                `<div class="team ${w2?'selected':w1?'eliminated':''}${c2}">
+                    <span class="seed">${s2}</span><span class="team-name">${n2}</span>${check2?' <span class="check-mark">✓</span>':''}${bustLabel2?` <span class="bust-actual">${bustLabel2}</span>`:''}
                 </div>`;
             container.appendChild(div);
         }
     });
-
     const ch = document.getElementById('champion_' + bid);
     const actualChamp = (trueResults['championship'] || [])[0];
     if (ch && data.champion) {
-        const champBusted = bustedTeams.has(data.champion) && 6 >= bustedTeams.get(data.champion);
+        const champBusted = bustedData.busted.has(data.champion) && 6 >= bustedData.busted.get(data.champion);
         const nameHtml = champBusted
             ? `<span class="team-name" style="text-decoration:line-through;opacity:0.6;">${data.champion}</span>`
             : data.champion;
-        if (actualChamp && data.champion === actualChamp) {
-            ch.innerHTML = nameHtml + ' <span class="check-mark">✓</span>';
-        } else if (actualChamp && data.champion !== actualChamp) {
-            ch.innerHTML = nameHtml + ` <span class="bust-actual">${actualChamp}</span>`;
-        } else {
-            ch.innerHTML = nameHtml;
-        }
+        ch.innerHTML = actualChamp && data.champion === actualChamp
+            ? nameHtml + ' <span class="check-mark">✓</span>'
+            : actualChamp && data.champion !== actualChamp
+                ? nameHtml + ` <span class="bust-actual">${actualChamp}</span>`
+                : nameHtml;
     }
 }
 
