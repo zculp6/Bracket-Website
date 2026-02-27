@@ -471,6 +471,8 @@
     </div>
 </div>
 
+
+
 <div id="bracketContainer">
     <div class="bracket-region-tabs">
         <button class="bracket-region-tab active" data-region="south">South</button>
@@ -565,6 +567,25 @@
             applyBtn.disabled = false;
         });
     });
+
+    /* ── REGION TAB SWITCHING LOGIC ── */
+document.querySelectorAll('.bracket-region-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const targetRegion = tab.getAttribute('data-region');
+
+        // 1. Update Tab Buttons: Remove 'active' from all, add to clicked one
+        document.querySelectorAll('.bracket-region-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // 2. Update Panels: Remove 'active' from all, add to the one matching data-region
+        document.querySelectorAll('.bracket-region-panel').forEach(panel => {
+            panel.classList.remove('active');
+            if (panel.getAttribute('data-region') === targetRegion) {
+                panel.classList.add('active');
+            }
+        });
+    });
+});
 
     applyBtn.addEventListener('click', () => {
         if (!selectedStrategy) return;
