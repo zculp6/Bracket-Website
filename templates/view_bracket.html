@@ -350,15 +350,41 @@ function buildBustedTeams(data) {
     return {busted, eliminatedBy};
 }
 
-function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
+function buildActualRoundTeams(data) {
+    const actualTeamsByRound = {};
+
+    ["west_r64", "south_r64", "east_r64", "midwest_r64"].forEach(cid => {
+        actualTeamsByRound[cid] = (data[cid] || []).map(t => typeof t === 'string' ? t : t?.name).filter(Boolean);
+    });
+
+    [
+        ["west_r32", "west_r64"], ["west_s16", "west_r32"], ["west_e8", "west_s16"],
+        ["south_r32", "south_r64"], ["south_s16", "south_r32"], ["south_e8", "south_s16"],
+        ["east_r32", "east_r64"], ["east_s16", "east_r32"], ["east_e8", "east_s16"],
+        ["midwest_r32", "midwest_r64"], ["midwest_s16", "midwest_r32"], ["midwest_e8", "midwest_s16"]
+    ].forEach(([cid, sourceCid]) => {
+        actualTeamsByRound[cid] = [...(trueResults[sourceCid] || [])];
+    });
+
+    actualTeamsByRound.ff_left = [trueResults.west_e8?.[0], trueResults.south_e8?.[0]].filter(Boolean);
+    actualTeamsByRound.ff_right = [trueResults.east_e8?.[0], trueResults.midwest_e8?.[0]].filter(Boolean);
+    actualTeamsByRound.championship = [trueResults.ff_left?.[0], trueResults.ff_right?.[0]].filter(Boolean);
+
+    return actualTeamsByRound;
+}
+
+function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData, actualRoundTeams) {
     const { busted, eliminatedBy } = bustedData;
     const userPick = w1 ? n1 : w2 ? n2 : null;
     const actualWinner = (trueResults[cid] || [])[slotIndex];
+    const actualTeams = actualRoundTeams[cid] || [];
+    const actualTeamInPos1 = actualTeams[(slotIndex * 2)];
+    const actualTeamInPos2 = actualTeams[(slotIndex * 2) + 1];
     let c1 = '', c2 = '', check1 = false, check2 = false;
     if (actualWinner) {
         const correct = userPick === actualWinner;
-        c1 = (correct && n1 === userPick) ? ' correct' : (!correct && n1 === actualWinner) ? ' incorrect-actual' : '';
-        c2 = (correct && n2 === userPick) ? ' correct' : (!correct && n2 === actualWinner) ? ' incorrect-actual' : '';
+        c1 = (correct && n1 === userPick) ? ' correct' : (!correct && n1 === actualTeamInPos1) ? ' incorrect-actual' : '';
+        c2 = (correct && n2 === userPick) ? ' correct' : (!correct && n2 === actualTeamInPos2) ? ' incorrect-actual' : '';
         check1 = correct && n1 === userPick;
         check2 = correct && n2 === userPick;
     }
@@ -374,6 +400,7 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
 
 function renderBracket(data, bid) {
     const bustedData = buildBustedTeams(data);
+    const actualRoundTeams = buildActualRoundTeams(data);
     CONTAINERS.forEach(cid => {
         const teams = data[cid];
         if (!teams || !teams.length) return;
@@ -392,7 +419,7 @@ function renderBracket(data, bid) {
             const n2 = typeof t2 === 'string' ? t2 : t2.name;
             const s2 = typeof t2 === 'string' ? '' : (t2.seed || '');
             const w1 = winners.has(n1), w2 = winners.has(n2);
-            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(w1, w2, n1, n2, i/2, cid, bustedData);
+            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(w1, w2, n1, n2, i/2, cid, bustedData, actualRoundTeams);
             const div = document.createElement('div');
             div.className = 'matchup';
             div.innerHTML =
