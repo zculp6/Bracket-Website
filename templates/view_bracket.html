@@ -367,8 +367,8 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
     const bust2 = busted.has(n2) && depth >= busted.get(n2);
     if (bust1) c1 += ' busted';
     if (bust2) c2 += ' busted';
-    const bustLabel1 = bust1 ? (actualWinner || eliminatedBy.get(n1) || null) : null;
-    const bustLabel2 = bust2 ? (actualWinner || eliminatedBy.get(n2) || null) : null;
+    const bustLabel1 = bust1 ? (actualWinner && actualWinner !== n1 ? actualWinner : eliminatedBy.get(n1) || null) : null;
+    const bustLabel2 = bust2 ? (actualWinner && actualWinner !== n2 ? actualWinner : eliminatedBy.get(n2) || null) : null;
     return { c1, c2, check1, check2, bustLabel1, bustLabel2 };
 }
 
