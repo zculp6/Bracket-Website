@@ -33,21 +33,24 @@ rankings_stats['ranking'] = rankings_stats.index + 1
 # ---------------------------------------
 app = Flask(__name__)
 
+# Secret key for session management
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "alohamora123")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Build the database URL with the correct driver
-database_url = os.environ.get("DATABASE_URL", "postgresql://user:password@localhost/bracketdb")
+# Use Neon database connection
+database_url = os.environ.get(
+    "DATABASE_URL",
+    "postgresql+psycopg://neondb_owner:npg_OxjP7As0lMYN@ep-small-fog-aefmo77u-pooler.c-2.us-east-2.aws.neon.tech/bracket-db?sslmode=require&channel_binding=require"
+)
 
-# Fix Render's postgres:// prefix
+# Optional: fix Render-provided URLs
 if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-# Tell SQLAlchemy to use psycopg3 driver
-if "postgresql://" in database_url and "+psycopg" not in database_url:
-    database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+
+# Initialize SQLAlchemy
+db = SQLAlchemy(app)
 
 # ---------------------------------------
 # EXTENSIONS
