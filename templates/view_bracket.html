@@ -369,16 +369,39 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
     const bust2 = busted.has(n2) && depth >= busted.get(n2);
     if (bust1) c1 += ' busted';
     if (bust2) c2 += ' busted';
-    // Red label = whoever actually won this real slot, if different from the user's pick.
-    // Never show in R64 (depth 0). Only show if real results exist for this slot.
-    const getRealBustLabel = (name, bust) => {
+    // Red label = whoever actually won the PREVIOUS round's feeder game for this position.
+    // Each slot in the current round has two feeder games from the previous round:
+    //   top team in slot S came from previous round slot S*2
+    //   bottom team in slot S came from previous round slot S*2+1
+    // Never show in R64 (depth 0).
+    const getRealBustLabel = (name, bust, teamPos) => {
         if (!bust || depth === 0) return null;
-        const slotWinner = bustedData.realSlotWinner.get(`${cid}:${slotIndex}`);
-        if (slotWinner && slotWinner !== name) return slotWinner;
+        const PREV_ROUND_FOR_POS = {
+            west_r32:    (s, p) => ({ cid: 'west_r64',    slot: s * 2 + p }),
+            west_s16:    (s, p) => ({ cid: 'west_r32',    slot: s * 2 + p }),
+            west_e8:     (s, p) => ({ cid: 'west_s16',    slot: s * 2 + p }),
+            south_r32:   (s, p) => ({ cid: 'south_r64',   slot: s * 2 + p }),
+            south_s16:   (s, p) => ({ cid: 'south_r32',   slot: s * 2 + p }),
+            south_e8:    (s, p) => ({ cid: 'south_s16',   slot: s * 2 + p }),
+            east_r32:    (s, p) => ({ cid: 'east_r64',    slot: s * 2 + p }),
+            east_s16:    (s, p) => ({ cid: 'east_r32',    slot: s * 2 + p }),
+            east_e8:     (s, p) => ({ cid: 'east_s16',    slot: s * 2 + p }),
+            midwest_r32: (s, p) => ({ cid: 'midwest_r64', slot: s * 2 + p }),
+            midwest_s16: (s, p) => ({ cid: 'midwest_r32', slot: s * 2 + p }),
+            midwest_e8:  (s, p) => ({ cid: 'midwest_s16', slot: s * 2 + p }),
+            ff_left:     (s, p) => ({ cid: p === 0 ? 'west_e8' : 'south_e8', slot: 0 }),
+            ff_right:    (s, p) => ({ cid: p === 0 ? 'east_e8' : 'midwest_e8', slot: 0 }),
+            championship:(s, p) => ({ cid: p === 0 ? 'ff_left' : 'ff_right', slot: 0 }),
+        };
+        const fn = PREV_ROUND_FOR_POS[cid];
+        if (!fn) return null;
+        const { cid: prevCid, slot: prevSlot } = fn(slotIndex, teamPos);
+        const feederWinner = bustedData.realSlotWinner.get(`${prevCid}:${prevSlot}`);
+        if (feederWinner && feederWinner !== name) return feederWinner;
         return null;
     };
-    const bustLabel1 = getRealBustLabel(n1, bust1);
-    const bustLabel2 = getRealBustLabel(n2, bust2);
+    const bustLabel1 = getRealBustLabel(n1, bust1, 0);
+    const bustLabel2 = getRealBustLabel(n2, bust2, 1);
     return { c1, c2, check1, check2, bustLabel1, bustLabel2 };
 }
 
