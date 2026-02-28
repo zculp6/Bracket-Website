@@ -40,6 +40,7 @@ class Group(db.Model):
     name = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    max_brackets_per_person = db.Column(db.Integer, nullable=False, default=1)
 
     owner = db.relationship('User', backref='owned_groups', foreign_keys=[owner_id])
 

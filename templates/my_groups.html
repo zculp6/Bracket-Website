@@ -30,6 +30,15 @@
         <span class="nav-divider"></span>
         <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
         <a href="/rankings_stats"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
+        <span class="nav-divider"></span>
+        <a href="/help" class="active"><span class="nav-icon">❓</span><span class="nav-label">Help</span></a>
+        <a href="/contact"><span class="nav-icon">✉️</span><span class="nav-label">Contact</span></a>
+        <span class="nav-divider"></span>
+        {% if current_user.is_authenticated %}
+        <a href="/logout" class="btn-danger"><span class="nav-icon">🚪</span><span class="nav-label">Logout</span></a>
+        {% else %}
+        <a href="/login"><span class="nav-icon">🔑</span><span class="nav-label">Login</span></a>
+        {% endif %}
     </div>
 </nav>
 
@@ -38,15 +47,44 @@
 
     <div class="panel">
         <h3>Your Groups</h3>
-        <div class="group-list">
-            {% if groups %}
-                {% for group in groups %}
-                    <a href="/groups/{{ group.id }}">{{ group.name }}</a>
-                {% endfor %}
-            {% else %}
-                <p>You are not in any groups yet.</p>
-            {% endif %}
-        </div>
+        {% if groups_data %}
+            {% for gd in groups_data %}
+            <div style="border-bottom:1px solid rgba(255,255,255,0.07); padding:14px 0;">
+                <a href="/groups/{{ gd.group.id }}" style="font-size:17px; font-weight:700; color:#7eb2ff; text-decoration:none;">
+                    {{ gd.group.name }}
+                </a>
+                <span style="font-size:12px; color:rgba(255,255,255,0.35); margin-left:10px;">
+                    {{ gd.total_entries }} entr{{ 'y' if gd.total_entries == 1 else 'ies' }}
+                </span>
+                {% if gd.my_entries %}
+                    <table style="margin-top:8px; width:100%; border-collapse:collapse; font-size:13px;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left; padding:4px 8px; color:rgba(255,255,255,0.45); font-weight:600;">Bracket</th>
+                                <th style="text-align:center; padding:4px 8px; color:rgba(255,255,255,0.45); font-weight:600;">Score</th>
+                                <th style="text-align:center; padding:4px 8px; color:rgba(255,255,255,0.45); font-weight:600;">Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bracket, rank in gd.my_entries %}
+                            <tr>
+                                <td style="padding:4px 8px;">
+                                    <a href="/bracket/{{ bracket.id }}" style="color:#a8c8ff; text-decoration:none;">{{ bracket.bracket_name }}</a>
+                                </td>
+                                <td style="text-align:center; padding:4px 8px; color:#f0d060; font-weight:700;">{{ bracket.score }}</td>
+                                <td style="text-align:center; padding:4px 8px; color:#86c988; font-weight:700;">#{{ rank }} / {{ gd.total_entries }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div style="font-size:13px; color:rgba(255,255,255,0.4); margin-top:6px;">No brackets submitted to this group yet. <a href="/groups/{{ gd.group.id }}" style="color:#7eb2ff;">Add brackets →</a></div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>You are not in any groups yet.</p>
+        {% endif %}
     </div>
 
     <div class="panel">
@@ -54,6 +92,13 @@
         <div class="row">
             <input id="createName" placeholder="Group name">
             <input id="createPass" type="password" placeholder="Password">
+            <select id="createMaxBrackets" style="flex:0 0 auto; padding:10px; border-radius:8px; border:1px solid #234; background:#061633; color:#fff;">
+                <option value="1">1 bracket/person</option>
+                <option value="2">2 brackets/person</option>
+                <option value="3">3 brackets/person</option>
+                <option value="4">4 brackets/person</option>
+                <option value="5">5 brackets/person</option>
+            </select>
             <button id="createBtn">Create Group</button>
         </div>
     </div>
@@ -87,7 +132,8 @@ document.getElementById('createBtn').addEventListener('click', async () => {
     try {
         const data = await postJSON('/create_group', {
             name: document.getElementById('createName').value,
-            password: document.getElementById('createPass').value
+            password: document.getElementById('createPass').value,
+            max_brackets_per_person: parseInt(document.getElementById('createMaxBrackets').value)
         });
         window.location.href = `/groups/${data.group_id}`;
     } catch (e) {

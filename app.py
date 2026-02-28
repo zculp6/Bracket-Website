@@ -147,12 +147,38 @@ def leaderboard_page():
 @app.route("/my_groups")
 @login_required
 def my_groups_page():
-    memberships = (GroupMembership.query
-                   .filter_by(user_id=current_user.id)
-                   .all())
-    groups = [membership.group for membership in memberships]
-    return render_template("my_groups.html", groups=groups)
+    memberships = GroupMembership.query.filter_by(user_id=current_user.id).all()
+    groups_data = []
+    for membership in memberships:
+        group = membership.group
+        # All selected brackets in this group ordered by score
+        all_selected = (Bracket.query
+                        .join(GroupBracketSelection, GroupBracketSelection.bracket_id == Bracket.id)
+                        .filter(GroupBracketSelection.group_id == group.id)
+                        .filter(Bracket.is_submitted.is_(True))
+                        .order_by(Bracket.score.desc(), Bracket.id.asc())
+                        .all())
+        # Assign ranks (tied scores share rank)
+        ranked = []
+        current_rank = 1
+        for i, b in enumerate(all_selected):
+            if i > 0 and b.score < all_selected[i - 1].score:
+                current_rank = i + 1
+            ranked.append((b, current_rank))
 
+        # My brackets in this group with their rank
+        my_selected_ids = {
+            s.bracket_id for s in GroupBracketSelection.query.filter_by(
+                group_id=group.id, user_id=current_user.id).all()
+        }
+        my_entries = [(b, rank) for b, rank in ranked if b.id in my_selected_ids]
+
+        groups_data.append({
+            "group": group,
+            "my_entries": my_entries,
+            "total_entries": len(all_selected),
+        })
+    return render_template("my_groups.html", groups_data=groups_data)
 
 @app.route("/create_group", methods=["POST"])
 @login_required
@@ -160,6 +186,7 @@ def create_group():
     data = request.get_json(force=True)
     name = (data.get("name") or "").strip()
     password = (data.get("password") or "").strip()
+    max_brackets = data.get("max_brackets_per_person", 1)
 
     if not name:
         return jsonify({"error": "Group name is required."}), 400
@@ -167,6 +194,12 @@ def create_group():
         return jsonify({"error": "Group name must be 80 characters or fewer."}), 400
     if not password:
         return jsonify({"error": "Group password is required."}), 400
+    try:
+        max_brackets = int(max_brackets)
+    except (ValueError, TypeError):
+        max_brackets = 1
+    if not (1 <= max_brackets <= 5):
+        return jsonify({"error": "Brackets per person must be between 1 and 5."}), 400
 
     existing_group = Group.query.filter(db.func.lower(Group.name) == name.lower()).first()
     if existing_group:
@@ -175,7 +208,8 @@ def create_group():
     group = Group(
         name=name,
         password_hash=bcrypt.generate_password_hash(password).decode("utf-8"),
-        owner_id=current_user.id
+        owner_id=current_user.id,
+        max_brackets_per_person=max_brackets
     )
     db.session.add(group)
     db.session.flush()
@@ -185,7 +219,6 @@ def create_group():
     db.session.commit()
 
     return jsonify({"message": "Group created!", "group_id": group.id})
-
 
 @app.route("/join_group", methods=["POST"])
 @login_required
@@ -279,8 +312,11 @@ def update_group_brackets(group_id):
             unique_ids.append(parsed)
             seen.add(parsed)
 
-    if len(unique_ids) > 25:
-        return jsonify({"error": "You may select up to 25 submitted brackets per group."}), 400
+    group = Group.query.get_or_404(group_id)
+    limit = group.max_brackets_per_person
+    if len(unique_ids) > limit:
+        return jsonify(
+            {"error": f"This group allows at most {limit} bracket{'s' if limit != 1 else ''} per person."}), 400
 
     owned_submitted_ids = {
         b.id for b in Bracket.query.filter_by(user_id=current_user.id, is_submitted=True).all()
