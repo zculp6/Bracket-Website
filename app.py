@@ -37,20 +37,12 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "alohamora123")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Use Neon database connection
-database_url = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+psycopg://neondb_owner:npg_OxjP7As0lMYN@ep-small-fog-aefmo77u-pooler.c-2.us-east-2.aws.neon.tech/bracket-db?sslmode=require&channel_binding=require"
-)
+database_url = os.environ.get("DATABASE_URL")
 
-# Optional: fix Render-provided URLs
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-
-# Initialize SQLAlchemy
-db = SQLAlchemy(app)
 
 # ---------------------------------------
 # EXTENSIONS
