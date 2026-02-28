@@ -321,11 +321,21 @@ function buildBustedTeams(data) {
             const n2 = typeof teams[i+1] === 'string' ? teams[i+1] : teams[i+1]?.name;
             if (n1 && n1 !== realWinner && !realLostAt.has(n1)) {
                 realLostAt.set(n1, depth);
-                eliminatedBy.set(n1, realWinner);
+                // If the real winner was itself busted (never actually made it here),
+                // trace forward to find who really occupies this slot
+                let actualReplacer = realWinner;
+                while (eliminatedBy.has(actualReplacer)) {
+                    actualReplacer = eliminatedBy.get(actualReplacer);
+                }
+                eliminatedBy.set(n1, actualReplacer);
             }
             if (n2 && n2 !== realWinner && !realLostAt.has(n2)) {
                 realLostAt.set(n2, depth);
-                eliminatedBy.set(n2, realWinner);
+                let actualReplacer = realWinner;
+                while (eliminatedBy.has(actualReplacer)) {
+                    actualReplacer = eliminatedBy.get(actualReplacer);
+                }
+                eliminatedBy.set(n2, actualReplacer);
             }
         }
     });
@@ -367,8 +377,8 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
     const bust2 = busted.has(n2) && depth >= busted.get(n2);
     if (bust1) c1 += ' busted';
     if (bust2) c2 += ' busted';
-    const bustLabel1 = bust1 ? (actualWinner && actualWinner !== n1 ? actualWinner : eliminatedBy.get(n1) || null) : null;
-    const bustLabel2 = bust2 ? (actualWinner && actualWinner !== n2 ? actualWinner : eliminatedBy.get(n2) || null) : null;
+    const bustLabel1 = bust1 ? (eliminatedBy.get(n1) || null) : null;
+    const bustLabel2 = bust2 ? (eliminatedBy.get(n2) || null) : null;
     return { c1, c2, check1, check2, bustLabel1, bustLabel2 };
 }
 
