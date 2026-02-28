@@ -246,8 +246,12 @@ body {
 }
 
 .bust-actual {
+    font-size: 10px;
+    font-weight: 600;
     color: #dc2626;
-    margin-left: 4px;
+    margin-left: 5px;
+    white-space: nowrap;
+    opacity: 0.85;
 }
 
 .seed { font-weight: bold; margin-right: 6px; }
@@ -360,4 +364,3 @@ body {
 @media (max-width: 768px) {
     .bracket-column { min-width: 110px; }
     .bracket-region-tabs { flex-wrap: wrap; }
-}
