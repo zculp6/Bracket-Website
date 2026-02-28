@@ -780,8 +780,8 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
         check2 = correct && n2 === userPick;
     }
     const depth = ROUND_DEPTH[cid] ?? -1;
-    const bust1 = busted.has(n1) && depth >= busted.get(n1);
-    const bust2 = busted.has(n2) && depth >= busted.get(n2);
+    const bust1 = busted.has(n1) && depth > busted.get(n1);
+    const bust2 = busted.has(n2) && depth > busted.get(n2);
     if (bust1) c1 += ' busted';
     if (bust2) c2 += ' busted';
     // Red label = whoever actually won this real slot, if different from the user's pick.
