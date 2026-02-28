@@ -270,7 +270,7 @@
 
 <!-- ========================= JS ========================= -->
 <script>
-const allData     = ({{ (submitted + saved) | map(attribute='bracket_data') | list | tojson }}).map(d => typeof d === 'string' ? JSON.parse(d) : d);
+const allData     = {{ brackets | map(attribute='bracket_data') | list | tojson }};
 const allIds      = {{ brackets | map(attribute='id')           | list | tojson }};
 const trueResults = {{ (true_results or {}) | tojson }};
 
@@ -350,17 +350,15 @@ function buildBustedTeams(data) {
     return {busted, eliminatedBy};
 }
 
-function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData, actualRoundTeams) {
+function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
     const { busted, eliminatedBy } = bustedData;
+    const userPick = w1 ? n1 : w2 ? n2 : null;
     const actualWinner = (trueResults[cid] || [])[slotIndex];
-    const actualTeams = actualRoundTeams[cid] || [];
-    const actualTeamInPos1 = actualTeams[(slotIndex * 2)];
-    const actualTeamInPos2 = actualTeams[(slotIndex * 2) + 1];
     let c1 = '', c2 = '', check1 = false, check2 = false;
     if (actualWinner) {
         const correct = userPick === actualWinner;
-        c1 = (correct && n1 === userPick) ? ' correct' : (!correct && n1 === actualTeamInPos1) ? ' incorrect-actual' : '';
-        c2 = (correct && n2 === userPick) ? ' correct' : (!correct && n2 === actualTeamInPos2) ? ' incorrect-actual' : '';
+        c1 = (correct && n1 === userPick) ? ' correct' : (!correct && n1 === actualWinner) ? ' incorrect-actual' : '';
+        c2 = (correct && n2 === userPick) ? ' correct' : (!correct && n2 === actualWinner) ? ' incorrect-actual' : '';
         check1 = correct && n1 === userPick;
         check2 = correct && n2 === userPick;
     }
@@ -374,23 +372,8 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData, actualRoundTeam
     return { c1, c2, check1, check2, bustLabel1, bustLabel2 };
 }
 
-function buildSeedMap(data) {
-    const seedMap = new Map();
-    ["west_r64", "south_r64", "east_r64", "midwest_r64"].forEach(cid => {
-        (data[cid] || []).forEach(t => {
-            if (!t || typeof t === 'string') return;
-            if (t.name && t.seed !== undefined && t.seed !== null && !seedMap.has(t.name)) {
-                seedMap.set(t.name, t.seed);
-            }
-        });
-    });
-    return seedMap;
-}
-
 function renderBracket(data, bid) {
     const bustedData = buildBustedTeams(data);
-    const actualRoundTeams = buildActualRoundTeams(data);
-    const seedMap = buildSeedMap(data);
     CONTAINERS.forEach(cid => {
         const teams = data[cid];
         if (!teams || !teams.length) return;
@@ -404,21 +387,12 @@ function renderBracket(data, bid) {
         container.innerHTML = '';
         for (let i = 0; i + 1 < teams.length; i += 2) {
             const t1 = teams[i], t2 = teams[i+1];
-            const origN1 = typeof t1 === 'string' ? t1 : t1.name;
-            const origS1 = typeof t1 === 'string' ? '' : (t1.seed || '');
-            const origN2 = typeof t2 === 'string' ? t2 : t2.name;
-            const origS2 = typeof t2 === 'string' ? '' : (t2.seed || '');
-            const slotIndex = i / 2;
-            const actualTeams = actualRoundTeams[cid] || [];
-            const actualN1 = actualTeams[slotIndex * 2];
-            const actualN2 = actualTeams[(slotIndex * 2) + 1];
-            const n1 = actualN1 || origN1;
-            const n2 = actualN2 || origN2;
-            const s1 = actualN1 ? (seedMap.get(actualN1) ?? '') : origS1;
-            const s2 = actualN2 ? (seedMap.get(actualN2) ?? '') : origS2;
-            const userPick = winners.has(origN1) ? origN1 : winners.has(origN2) ? origN2 : null;
+            const n1 = typeof t1 === 'string' ? t1 : t1.name;
+            const s1 = typeof t1 === 'string' ? '' : (t1.seed || '');
+            const n2 = typeof t2 === 'string' ? t2 : t2.name;
+            const s2 = typeof t2 === 'string' ? '' : (t2.seed || '');
             const w1 = winners.has(n1), w2 = winners.has(n2);
-            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(userPick, n1, n2, slotIndex, cid, bustedData, actualRoundTeams);
+            const { c1, c2, check1, check2, bustLabel1, bustLabel2 } = teamClasses(w1, w2, n1, n2, i/2, cid, bustedData);
             const div = document.createElement('div');
             div.className = 'matchup';
             div.innerHTML =
@@ -450,7 +424,6 @@ document.addEventListener('DOMContentLoaded', () => {
     allData.forEach((d, i) => renderBracket(d, allIds[i]));
 });
 
-
 /* Region tab switching (per bracket panel) */
 document.querySelectorAll('.bracket-container-inner').forEach(container => {
     container.querySelectorAll('.bracket-region-tab').forEach(tab => {
@@ -479,4 +452,3 @@ document.querySelectorAll('.bracket-tab').forEach(btn => {
 </script>
 
 </body>
-</html>
