@@ -85,6 +85,11 @@ function loadInitialTeams(teamsData) {
 
     // Pre-populate all downstream rounds with blank placeholder matchups
     preFillBlankMatchups();
+    
+    if (!window.__regionTabsInitialized) {
+        initRegionTabs();
+        window.__regionTabsInitialized = true;
+    }
 
     attachClickHandlers();
 }
@@ -416,6 +421,29 @@ function resetBracket() {
     // Clear champion display
     const champDiv = document.getElementById("champion");
     if (champDiv) champDiv.innerText = "";
+}
+
+/* =========================================================
+   REGION TAB SWITCHING
+   ========================================================= */
+function initRegionTabs() {
+    const tabs = document.querySelectorAll('.bracket-region-tab');
+    const panels = document.querySelectorAll('.bracket-region-panel');
+    if (!tabs.length || !panels.length) return;
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const region = tab.getAttribute('data-region');
+            if (!region) return;
+
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(panel => panel.classList.remove('active'));
+
+            tab.classList.add('active');
+            const targetPanel = document.querySelector(`.bracket-region-panel[data-region="${region}"]`);
+            if (targetPanel) targetPanel.classList.add('active');
+        });
+    });
 }
 
 /* =========================================================
