@@ -6,7 +6,7 @@ from flask_bcrypt import Bcrypt
 from simulation import simulate_tournament, chalk_bracket, random_bracket, random_probabilistic_bracket, ranking_bracket
 from simulation import SEED_REGION_MAPPING, REGION_TO_ROUND_ID, TEAMS
 from scoring import score_bracket
-from models import TournamentResult, Bracket
+from models import TournamentResult, Bracket, Group, GroupMembership, GroupBracketSelection
 import pandas as pd
 
 # To reset the database in terminal:
@@ -52,7 +52,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 # ---------------------------------------
 # EXTENSIONS
 # ---------------------------------------
-from models import db, User, Bracket
+from models import db, User, Bracket, Group, GroupMembership, GroupBracketSelection
 
 db.init_app(app)
 
@@ -138,8 +138,163 @@ def contact_page():
 
 @app.route("/leaderboard")
 def leaderboard_page():
-    brackets = Bracket.query.order_by(Bracket.score.desc()).all()
+    brackets = (Bracket.query
+                .filter_by(is_submitted=True)
+                .order_by(Bracket.score.desc())
+                .all())
     return render_template("leaderboard.html", brackets=brackets)
+
+@app.route("/my_groups")
+@login_required
+def my_groups_page():
+    memberships = (GroupMembership.query
+                   .filter_by(user_id=current_user.id)
+                   .all())
+    groups = [membership.group for membership in memberships]
+    return render_template("my_groups.html", groups=groups)
+
+
+@app.route("/create_group", methods=["POST"])
+@login_required
+def create_group():
+    data = request.get_json(force=True)
+    name = (data.get("name") or "").strip()
+    password = (data.get("password") or "").strip()
+
+    if not name:
+        return jsonify({"error": "Group name is required."}), 400
+    if len(name) > 80:
+        return jsonify({"error": "Group name must be 80 characters or fewer."}), 400
+    if not password:
+        return jsonify({"error": "Group password is required."}), 400
+
+    existing_group = Group.query.filter(db.func.lower(Group.name) == name.lower()).first()
+    if existing_group:
+        return jsonify({"error": "A group with that name already exists."}), 400
+
+    group = Group(
+        name=name,
+        password_hash=bcrypt.generate_password_hash(password).decode("utf-8"),
+        owner_id=current_user.id
+    )
+    db.session.add(group)
+    db.session.flush()
+
+    membership = GroupMembership(group_id=group.id, user_id=current_user.id)
+    db.session.add(membership)
+    db.session.commit()
+
+    return jsonify({"message": "Group created!", "group_id": group.id})
+
+
+@app.route("/join_group", methods=["POST"])
+@login_required
+def join_group():
+    data = request.get_json(force=True)
+    name = (data.get("name") or "").strip()
+    password = (data.get("password") or "").strip()
+
+    if not name or not password:
+        return jsonify({"error": "Group name and password are required."}), 400
+
+    group = Group.query.filter(db.func.lower(Group.name) == name.lower()).first()
+    if not group:
+        return jsonify({"error": "Group not found."}), 404
+
+    if not bcrypt.check_password_hash(group.password_hash, password):
+        return jsonify({"error": "Incorrect group password."}), 403
+
+    existing_membership = GroupMembership.query.filter_by(group_id=group.id, user_id=current_user.id).first()
+    if existing_membership:
+        return jsonify({"message": "You are already a member of this group.", "group_id": group.id})
+
+    member_count = GroupMembership.query.filter_by(group_id=group.id).count()
+    if member_count >= 100:
+        return jsonify({"error": "This group is full (max 100 users)."}), 400
+
+    db.session.add(GroupMembership(group_id=group.id, user_id=current_user.id))
+    db.session.commit()
+
+    return jsonify({"message": "Joined group!", "group_id": group.id})
+
+
+@app.route("/groups/<int:group_id>")
+@login_required
+def group_page(group_id):
+    membership = GroupMembership.query.filter_by(group_id=group_id, user_id=current_user.id).first()
+    if not membership:
+        abort(403)
+
+    group = Group.query.get_or_404(group_id)
+
+    user_submitted_brackets = (Bracket.query
+                               .filter_by(user_id=current_user.id, is_submitted=True)
+                               .order_by(Bracket.score.desc(), Bracket.id.desc())
+                               .all())
+
+    selected_ids = {
+        selection.bracket_id
+        for selection in GroupBracketSelection.query.filter_by(group_id=group_id, user_id=current_user.id).all()
+    }
+
+    selected_brackets = (Bracket.query
+                         .join(GroupBracketSelection, GroupBracketSelection.bracket_id == Bracket.id)
+                         .filter(GroupBracketSelection.group_id == group_id)
+                         .filter(Bracket.is_submitted.is_(True))
+                         .order_by(Bracket.score.desc(), Bracket.id.asc())
+                         .all())
+
+    true_results = _build_true_results()
+    return render_template(
+        "group.html",
+        group=group,
+        selected_brackets=selected_brackets,
+        user_submitted_brackets=user_submitted_brackets,
+        selected_ids=selected_ids,
+        true_results=true_results
+    )
+
+
+@app.route("/groups/<int:group_id>/update_brackets", methods=["POST"])
+@login_required
+def update_group_brackets(group_id):
+    membership = GroupMembership.query.filter_by(group_id=group_id, user_id=current_user.id).first()
+    if not membership:
+        abort(403)
+
+    data = request.get_json(force=True)
+    bracket_ids = data.get("bracket_ids") or []
+
+    if not isinstance(bracket_ids, list):
+        return jsonify({"error": "bracket_ids must be an array."}), 400
+
+    unique_ids = []
+    seen = set()
+    for bracket_id in bracket_ids:
+        try:
+            parsed = int(bracket_id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid bracket id in request."}), 400
+        if parsed not in seen:
+            unique_ids.append(parsed)
+            seen.add(parsed)
+
+    if len(unique_ids) > 25:
+        return jsonify({"error": "You may select up to 25 submitted brackets per group."}), 400
+
+    owned_submitted_ids = {
+        b.id for b in Bracket.query.filter_by(user_id=current_user.id, is_submitted=True).all()
+    }
+    invalid_ids = [bid for bid in unique_ids if bid not in owned_submitted_ids]
+    if invalid_ids:
+        return jsonify({"error": "All selected brackets must be your own submitted brackets."}), 400
+
+    GroupBracketSelection.query.filter_by(group_id=group_id, user_id=current_user.id).delete()
+    for bracket_id in unique_ids:
+        db.session.add(GroupBracketSelection(group_id=group_id, user_id=current_user.id, bracket_id=bracket_id))
+
+    db.session.commit()
+    return jsonify({"message": "Group brackets updated."})
 
 @app.route("/rankings_stats")
 def rankings_stats_page():

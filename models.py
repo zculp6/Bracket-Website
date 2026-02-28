@@ -34,3 +34,39 @@ class TournamentResult(db.Model):
     __table_args__ = (
         db.UniqueConstraint('round_id', 'slot_index', name='uq_round_slot'),
     )
+
+class Group(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    owner = db.relationship('User', backref='owned_groups', foreign_keys=[owner_id])
+
+
+class GroupMembership(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    group = db.relationship('Group', backref='memberships')
+    user = db.relationship('User', backref='group_memberships')
+
+    __table_args__ = (
+        db.UniqueConstraint('group_id', 'user_id', name='uq_group_user_membership'),
+    )
+
+
+class GroupBracketSelection(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bracket_id = db.Column(db.Integer, db.ForeignKey('bracket.id'), nullable=False)
+
+    group = db.relationship('Group', backref='selections')
+    user = db.relationship('User', backref='group_bracket_selections')
+    bracket = db.relationship('Bracket', backref='group_selections')
+
+    __table_args__ = (
+        db.UniqueConstraint('group_id', 'user_id', 'bracket_id', name='uq_group_user_bracket'),
+    )

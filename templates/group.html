@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ group.name }} Group</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <style>
+        body { background:#020b1f; color:#fff; font-family: Arial, sans-serif; }
+        .container { max-width: 980px; margin: 30px auto; padding: 0 20px; }
+        .panel { background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px; margin-bottom:20px; }
+        table { width:100%; border-collapse: collapse; }
+        th, td { padding:10px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; }
+        a { color:#86b8ff; }
+        .hint { color:#98bce8; font-size: 13px; margin-top: 8px; }
+        .actions { margin-top:12px; }
+        button { padding:10px 14px; border:0; border-radius:8px; background:#2d7dff; color:#fff; cursor:pointer; }
+    </style>
+</head>
+<body>
+<nav class="site-nav">
+    <a href="/" class="nav-logo">🏀 MM Bracket</a>
+    <div class="nav-links">
+        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+        <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
+        <a href="/my_brackets"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        <a href="/my_groups"><span class="nav-icon">👥</span><span class="nav-label">My Groups</span></a>
+        <span class="nav-divider"></span>
+        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>{{ group.name }}</h1>
+
+    <div class="panel">
+        <h3>Select Your Brackets For This Group</h3>
+        <p class="hint">You can select up to 25 of your submitted brackets for this private group leaderboard.</p>
+        {% if user_submitted_brackets %}
+            <form id="selectionForm">
+                {% for b in user_submitted_brackets %}
+                    <label style="display:block; margin:8px 0;">
+                        <input type="checkbox" name="bracket" value="{{ b.id }}" {% if b.id in selected_ids %}checked{% endif %}>
+                        {{ b.bracket_name }} (Score: {{ b.score }})
+                    </label>
+                {% endfor %}
+                <div class="actions"><button type="submit">Save Group Selections</button></div>
+            </form>
+        {% else %}
+            <p>You don't have submitted brackets yet. Submit a bracket first, then add it to this group.</p>
+        {% endif %}
+        <div id="saveMsg" class="hint"></div>
+    </div>
+
+    <div class="panel">
+        <h3>Group Leaderboard</h3>
+        {% if selected_brackets %}
+        <table>
+            <thead>
+                <tr><th>Rank</th><th>User</th><th>Bracket</th><th>Score</th><th>View</th></tr>
+            </thead>
+            <tbody>
+                {% for bracket in selected_brackets %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ bracket.user.username }}</td>
+                    <td>{{ bracket.bracket_name }}</td>
+                    <td>{{ bracket.score }}</td>
+                    <td><a href="/bracket/{{ bracket.id }}">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No brackets selected in this group yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.getElementById('selectionForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const checked = [...document.querySelectorAll('input[name="bracket"]:checked')].map(el => Number(el.value));
+    if (checked.length > 25) {
+        document.getElementById('saveMsg').textContent = 'You can select up to 25 brackets.';
+        return;
+    }
+    const res = await fetch('/groups/{{ group.id }}/update_brackets', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ bracket_ids: checked })
+    });
+    const data = await res.json();
+    document.getElementById('saveMsg').textContent = data.message || data.error || 'Saved';
+    if (res.ok) window.location.reload();
+});
+</script>
+</body>
+</html>

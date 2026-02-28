@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Groups</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <style>
+        body { background:#020b1f; color:#fff; font-family: Arial, sans-serif; }
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .panel { background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px; margin-bottom:20px; }
+        .group-list a { display:block; color:#7eb2ff; text-decoration:none; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.07); }
+        .group-list a:last-child { border-bottom:none; }
+        .row { display:flex; gap:10px; flex-wrap:wrap; }
+        input { flex:1; min-width: 180px; padding:10px; border-radius:8px; border:1px solid #234; background:#061633; color:#fff; }
+        button { padding:10px 14px; border:0; border-radius:8px; background:#2d7dff; color:#fff; cursor:pointer; }
+        #msg { margin-top:10px; color:#9ed0ff; }
+    </style>
+</head>
+<body>
+<nav class="site-nav">
+    <a href="/" class="nav-logo">🏀 MM Bracket</a>
+    <div class="nav-links">
+        <a href="/"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+        <a href="/bracket"><span class="nav-icon">⚡</span><span class="nav-label">Fill Bracket</span></a>
+        {% if current_user.is_authenticated %}
+        <a href="/my_brackets"><span class="nav-icon">📋</span><span class="nav-label">My Brackets</span></a>
+        <a href="/my_groups"><span class="nav-icon">👥</span><span class="nav-label">My Groups</span></a>
+        {% endif %}
+        <span class="nav-divider"></span>
+        <a href="/leaderboard"><span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span></a>
+        <a href="/rankings_stats"><span class="nav-icon">📊</span><span class="nav-label">Rankings & Stats</span></a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>My Groups</h1>
+
+    <div class="panel">
+        <h3>Your Groups</h3>
+        <div class="group-list">
+            {% if groups %}
+                {% for group in groups %}
+                    <a href="/groups/{{ group.id }}">{{ group.name }}</a>
+                {% endfor %}
+            {% else %}
+                <p>You are not in any groups yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Create Group</h3>
+        <div class="row">
+            <input id="createName" placeholder="Group name">
+            <input id="createPass" type="password" placeholder="Password">
+            <button id="createBtn">Create Group</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Join Group</h3>
+        <div class="row">
+            <input id="joinName" placeholder="Group name">
+            <input id="joinPass" type="password" placeholder="Password">
+            <button id="joinBtn">Join Group</button>
+        </div>
+        <div id="msg"></div>
+    </div>
+</div>
+
+<script>
+async function postJSON(url, payload) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+}
+
+const msg = document.getElementById('msg');
+
+document.getElementById('createBtn').addEventListener('click', async () => {
+    try {
+        const data = await postJSON('/create_group', {
+            name: document.getElementById('createName').value,
+            password: document.getElementById('createPass').value
+        });
+        window.location.href = `/groups/${data.group_id}`;
+    } catch (e) {
+        msg.textContent = e.message;
+    }
+});
+
+document.getElementById('joinBtn').addEventListener('click', async () => {
+    try {
+        const data = await postJSON('/join_group', {
+            name: document.getElementById('joinName').value,
+            password: document.getElementById('joinPass').value
+        });
+        window.location.href = `/groups/${data.group_id}`;
+    } catch (e) {
+        msg.textContent = e.message;
+    }
+});
+</script>
+</body>
+</html>
