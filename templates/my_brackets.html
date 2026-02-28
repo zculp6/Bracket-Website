@@ -720,11 +720,6 @@ const ROUND_DEPTH = {
 };
 
 function buildBustedTeams(data) {
-    const realLostAt = new Map();
-    const eliminatedBy = new Map();
-
-    // Build a lookup: for each round+slot, who actually won that slot
-    // key: "cid:slotIndex" → winner name
     const realSlotWinner = new Map();
     CONTAINERS.forEach(cid => {
         const realWinners = trueResults[cid];
@@ -732,24 +727,7 @@ function buildBustedTeams(data) {
         realWinners.forEach((w, i) => { if (w) realSlotWinner.set(`${cid}:${i}`, w); });
     });
 
-    // Build a lookup: for each user-predicted team, which cid+slotIndex
-    // do they appear in? We need this to find who actually won that slot.
-    // key: teamName → [ {cid, slotIndex} ]
-    const userSlots = new Map();
-    CONTAINERS.forEach(cid => {
-        const teams = data[cid];
-        if (!teams) return;
-        for (let i = 0; i + 1 < teams.length; i += 2) {
-            const slot = Math.floor(i / 2);
-            [teams[i], teams[i+1]].forEach(t => {
-                const name = typeof t === 'string' ? t : t?.name;
-                if (!name) return;
-                if (!userSlots.has(name)) userSlots.set(name, []);
-                userSlots.get(name).push({ cid, slot });
-            });
-        }
-    });
-
+    const realLostAt = new Map();
     CONTAINERS.forEach(cid => {
         const realWinners = trueResults[cid];
         if (!realWinners || !realWinners.length) return;
@@ -762,14 +740,8 @@ function buildBustedTeams(data) {
             if (!realWinner) continue;
             const n1 = typeof teams[i]   === 'string' ? teams[i]   : teams[i]?.name;
             const n2 = typeof teams[i+1] === 'string' ? teams[i+1] : teams[i+1]?.name;
-            if (n1 && n1 !== realWinner && !realLostAt.has(n1)) {
-                realLostAt.set(n1, depth);
-                eliminatedBy.set(n1, realWinner);
-            }
-            if (n2 && n2 !== realWinner && !realLostAt.has(n2)) {
-                realLostAt.set(n2, depth);
-                eliminatedBy.set(n2, realWinner);
-            }
+            if (n1 && n1 !== realWinner && !realLostAt.has(n1)) realLostAt.set(n1, depth);
+            if (n2 && n2 !== realWinner && !realLostAt.has(n2)) realLostAt.set(n2, depth);
         }
     });
 
@@ -787,15 +759,16 @@ function buildBustedTeams(data) {
         const n = data.champion, d = 6;
         if (!userLastRound.has(n) || d > userLastRound.get(n)) userLastRound.set(n, d);
     }
+
     const busted = new Map();
     realLostAt.forEach((lostDepth, name) => {
         if (lostDepth < (userLastRound.get(name) ?? lostDepth)) busted.set(name, lostDepth);
     });
-    return { busted, eliminatedBy, realSlotWinner, userSlots };
+    return { busted, realSlotWinner };
 }
 
 function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
-    const { busted, eliminatedBy } = bustedData;
+    const { busted } = bustedData;
     const userPick = w1 ? n1 : w2 ? n2 : null;
     const actualWinner = (trueResults[cid] || [])[slotIndex];
     let c1 = '', c2 = '', check1 = false, check2 = false;
@@ -811,14 +784,13 @@ function teamClasses(w1, w2, n1, n2, slotIndex, cid, bustedData) {
     const bust2 = busted.has(n2) && depth >= busted.get(n2);
     if (bust1) c1 += ' busted';
     if (bust2) c2 += ' busted';
-    // Show the team that actually won THIS slot in THIS round.
-    // But only if that team is real and not the same as the busted team.
-    // If this round's real result isn't in yet, fall back to eliminatedBy.
+    // Red label = whoever actually won this real slot, if different from the user's pick.
+    // Never show in R64 (depth 0). Only show if real results exist for this slot.
     const getRealBustLabel = (name, bust) => {
-        if (!bust) return null;
+        if (!bust || depth === 0) return null;
         const slotWinner = bustedData.realSlotWinner.get(`${cid}:${slotIndex}`);
         if (slotWinner && slotWinner !== name) return slotWinner;
-        return eliminatedBy.get(name) || null;
+        return null;
     };
     const bustLabel1 = getRealBustLabel(n1, bust1);
     const bustLabel2 = getRealBustLabel(n2, bust2);
