@@ -693,7 +693,7 @@
 
 <!-- JS -->
 <script>
-const allData     = {{ (submitted + saved) | map(attribute='bracket_data') | list | tojson }};
+const allData     = ({{ (submitted + saved) | map(attribute='bracket_data') | list | tojson }}).map(d => typeof d === 'string' ? JSON.parse(d) : d);
 const allIds      = {{ (submitted + saved) | map(attribute='id')           | list | tojson }};
 const trueResults = {{ (true_results or {}) | tojson }};
 
